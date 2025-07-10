@@ -47,14 +47,19 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     Game game;
 
     // メインループ
+    LONGLONG prevTime = GetNowHiPerformanceCount();
     while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
     {
+        LONGLONG currentTime = GetNowHiPerformanceCount();
+        float deltaTime = (currentTime - prevTime) / 1000000.0f; // マイクロ秒を秒に変換
+        prevTime = currentTime;
+
         VirtualScreenManager::BeginDraw();  // 仮想画面に描画開始
 
         // 画面クリア（BeginDrawの後、個別の描画の前に呼ぶのが一般的）
         ClearDrawScreen();
 
-        //game.Update();  // ゲームロジック更新
+        game.Update(deltaTime);  // ゲームロジック更新
         game.Draw();    // ゲーム描画
 
         VirtualScreenManager::EndDraw();    // 仮想画面の内容を実画面へ
