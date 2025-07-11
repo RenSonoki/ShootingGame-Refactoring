@@ -4,28 +4,29 @@
 #include <memory>
 #include <string>
 #include <algorithm>
-#include "UIComponent.h"
-#include "IUILogicUpdatable.h"
 
-// 単一のUIレイヤー（例：HUD、ポーズメニュー）を管理するシステム
+// 前方宣言
+class Entity;
+class UIComponent;
+class IUILogicUpdatable;
+class IUIInteractable;
+
+// UIComponentを持つエンティティを管理し、更新・描画・Zソートを行うシステム
 class UISystem
 {
 public:
     UISystem() = default;
 
-    // UIコンポーネントの登録・解除
-    void AddComponent(const std::shared_ptr<UIComponent>& component);
-    void RemoveComponent(const std::shared_ptr<UIComponent>& component);
+    // UIを持つエンティティの登録・解除
+    void RegisterEntity(const std::shared_ptr<Entity>& entity);
+    void UnregisterEntity(const std::shared_ptr<Entity>& entity);
 
-    // UIの更新・描画ループ
+    // 管理下の全UIコンポーネントのロジック更新
     void Update();
+    // 管理下の全UIコンポーネントを描画（Zソート後）
     void Draw(int targetScreen = -1);
 
-    // UIコンポーネントの取得
-    std::shared_ptr<UIComponent> GetComponentByName(const std::string& name) const;
-    const std::vector<std::shared_ptr<UIComponent>>& GetComponents() const;
-
-    // 全コンポーネントをクリア
+    // 全エンティティ（とコンポーネント）をクリア
     void Clear();
 
     // UIManagerが描画順を決定するための「レイヤー深度」を設定
@@ -33,13 +34,19 @@ public:
     int GetLayerDepth() const;
 
 private:
-    // Zオーダーでのソートを実行（Drawの中で必要に応じて呼ばれる）
-    void SortByZOrder();
+    // 描画順のソートを実行
+    void SortComponents();
+    // 管理対象のエンティティから、UIコンポーネントを再収集する
+    void RefreshComponents();
 
-    std::vector<std::shared_ptr<UIComponent>> m_components;
+    // Entityへの弱参照(weak_ptr)を保持し、所有権の循環を防ぐ
+    std::vector<std::weak_ptr<Entity>> m_entities;
 
-    // Zオーダーの再ソートが必要かを示すフラグ
-    bool m_isSortNeeded = false;
+    // 描画や更新のためにキャッシュされたUIComponentのリスト
+    std::vector<std::shared_ptr<UIComponent>> m_cachedComponents;
+
+    // リストの再構築と再ソートが必要かを示すフラグ
+    bool m_isDirty = true;
 
     // UIManager内での描画順を決定する深度
     int m_layerDepth = 0;
