@@ -7,9 +7,10 @@
 #include "SphereCollisionComponent.h"
 #include "ResourceManager.h" // ÉTÉEÉìÉhçƒê∂ÇÃÇΩÇﬂ
 #include "ResourceTraits.h"  //
-#include "DxLib.h"
+#include <DxLib.h>
 
-PlayerEntity::PlayerEntity(
+PlayerEntity::PlayerEntity
+(
     const std::wstring& modelPath,
     EntitySystem* entitySystem,
     std::shared_ptr<BulletPrototype> bulletPrototype)

@@ -11,10 +11,6 @@ Entity::Entity()
 {
 }
 
-Entity::~Entity()
-{
-}
-
 int Entity::GetID() const { return m_entityID; }
 bool Entity::IsActive() const { return m_active; }
 void Entity::SetActive(bool value) { m_active = value; }

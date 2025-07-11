@@ -8,17 +8,10 @@ Game::Game()
     // ChangeScene(std::make_unique<TitleScene>());
 }
 
-//void Game::Update()
-//{
-//    if (m_currentScene)
-//        m_currentScene->Update(*this);
-//}
-
-
-void Game::Update(float deltaTime) // ‚±‚±‚à•ÏX
+void Game::Update(float deltaTime)
 {
     if (m_currentScene)
-        m_currentScene->Update(deltaTime, *this); // deltaTime ‚à“n‚·
+        m_currentScene->Update(deltaTime, *this);
 }
 
 void Game::Draw()

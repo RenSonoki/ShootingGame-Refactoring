@@ -1,4 +1,5 @@
 #include "ResourceManager.h"
+#include "DxLib.h"
 
 ResourceManager& ResourceManager::Instance()
 {
@@ -11,43 +12,93 @@ ResourceManager::~ResourceManager()
     ClearAll();
 }
 
-void ResourceManager::ClearAll()
+// --- 各リソースタイプごとの、Getメソッドの具体的な実装 ---
+
+template<>
+int ResourceManager::Get<ModelTag>(const std::wstring& path)
 {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    std::lock_guard<std::mutex> lock(m_resourceMutex);
 
-    // タプルの各キャッシュに対してクリア処理を実行
-    for_each_in_tuple([this](auto& cache)
-        {
-        using CacheType = std::decay_t<decltype(cache)>;
-        using T = typename CacheType::key_type; // これは std::wstring
-        using U = typename CacheType::mapped_type; // これは HandleType
-
-        // Traitsを特定するために型情報が必要だが、直接は取れない。
-        // ここではタプルのインデックスから型を判定するヘルパーを使う。
-        // ... この部分は非常に複雑になるため、より簡単な実装に切り替えます。
-
-        // 簡単な実装：タプルの各要素を直接クリアする
-        // 将来的に型が増えたらここを手で修正する必要があるが、可読性が高い
-        });
-
-    // 全てのモデルを解放
-    for (auto const& [path, handle] : std::get<Cache<ModelTag>>(m_caches)) {
-        ResourceTraits<ModelTag>::Unload(handle);
+    // モデルキャッシュを検索
+    auto it = m_modelCache.find(path);
+    if (it != m_modelCache.end())
+    {
+        return it->second;
     }
-    std::get<Cache<ModelTag>>(m_caches).clear();
 
-    // 全ての画像を解放
-    for (auto const& [path, handle] : std::get<Cache<ImageTag>>(m_caches)) {
-        ResourceTraits<ImageTag>::Unload(handle);
+    // なければロード
+    int handle = ResourceTraits<ModelTag>::Load(path);
+    if (handle != -1) {
+        m_modelCache[path] = handle;
     }
-    std::get<Cache<ImageTag>>(m_caches).clear();
-
-    // 全てのサウンドを解放
-    for (auto const& [path, handle] : std::get<Cache<SoundTag>>(m_caches)) {
-        ResourceTraits<SoundTag>::Unload(handle);
+    else {
+        OutputDebugStringW((L"[Resource Load Failed] " + path + L"\n").c_str());
     }
-    std::get<Cache<SoundTag>>(m_caches).clear();
+    return handle;
 }
 
-// for_each_in_tuple の実装は、C++17の fold expression などを使うと綺麗に書けるらしい
-// 学習中かつ可読性とシンプルさのために今回はClearAll()に直接記述しました。
+template<>
+int ResourceManager::Get<ImageTag>(const std::wstring& path)
+{
+    std::lock_guard<std::mutex> lock(m_resourceMutex);
+
+    // イメージキャッシュを検索
+    auto it = m_imageCache.find(path);
+    if (it != m_imageCache.end()) {
+        return it->second;
+    }
+
+    // なければロード
+    int handle = ResourceTraits<ImageTag>::Load(path);
+    if (handle != -1) {
+        m_imageCache[path] = handle;
+    }
+    else {
+        OutputDebugStringW((L"[Resource Load Failed] " + path + L"\n").c_str());
+    }
+    return handle;
+}
+
+template<>
+int ResourceManager::Get<SoundTag>(const std::wstring& path)
+{
+    std::lock_guard<std::mutex> lock(m_resourceMutex);
+
+    // サウンドキャッシュを検索
+    auto it = m_soundCache.find(path);
+    if (it != m_soundCache.end()) {
+        return it->second;
+    }
+
+    // なければロード
+    int handle = ResourceTraits<SoundTag>::Load(path);
+    if (handle != -1) {
+        m_soundCache[path] = handle;
+    }
+    else {
+        OutputDebugStringW((L"[Resource Load Failed] " + path + L"\n").c_str());
+    }
+    return handle;
+}
+
+
+void ResourceManager::ClearAll()
+{
+    std::lock_guard<std::mutex> lock(m_resourceMutex);
+
+    // 各キャッシュを解放
+    for (auto const& [path, handle] : m_modelCache) {
+        ResourceTraits<ModelTag>::Unload(handle);
+    }
+    m_modelCache.clear();
+
+    for (auto const& [path, handle] : m_imageCache) {
+        ResourceTraits<ImageTag>::Unload(handle);
+    }
+    m_imageCache.clear();
+
+    for (auto const& [path, handle] : m_soundCache) {
+        ResourceTraits<SoundTag>::Unload(handle);
+    }
+    m_soundCache.clear();
+}

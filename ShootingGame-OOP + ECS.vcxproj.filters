@@ -1,0 +1,454 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="ゲームエンジン">
+      <UniqueIdentifier>{bd2076bb-2602-4005-91b3-e30dd4c90bd6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="オブジェクト">
+      <UniqueIdentifier>{db3c6608-7c38-4efe-ae90-e7442ab06fe8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント">
+      <UniqueIdentifier>{ec552e37-9f6d-4571-aed6-98c6535e46cb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="インターフェース">
+      <UniqueIdentifier>{4a02130a-4e80-414f-91d0-4080e71d0894}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="シーン">
+      <UniqueIdentifier>{363a5cb9-ae23-4231-ab00-292080193558}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="プロトタイプ">
+      <UniqueIdentifier>{f3205c1d-a47b-4bbe-9b87-5b7e74fecee0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI">
+      <UniqueIdentifier>{2dd70b82-5c60-4edd-99fc-1d9372c1cfbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="管理クラス">
+      <UniqueIdentifier>{ed4e9bde-4479-490d-9ae4-b7df14927a4a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="リソース管理">
+      <UniqueIdentifier>{d0362553-95d5-4ace-9920-a64eb70ae8ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="オブジェクト\インスタンス">
+      <UniqueIdentifier>{087465ed-4c80-4079-ae47-ad3b4e6d9dd7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="情報クラス">
+      <UniqueIdentifier>{743d384b-6cdb-4085-aed6-3ea66599acf9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="定義クラス">
+      <UniqueIdentifier>{305ca4fd-bb42-4050-9756-1fe7258d51f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="インターフェース\シーン">
+      <UniqueIdentifier>{4b3ba1aa-a58f-4afe-9ee6-3a4d75d32a2b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="インターフェース\UI">
+      <UniqueIdentifier>{e24fe1c9-92ea-4bd9-a3a0-198aafa43507}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="インターフェース\コンポーネント">
+      <UniqueIdentifier>{875ad8d8-7c1f-49a4-84e9-7816f969e7d5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コライダー">
+      <UniqueIdentifier>{4380f5eb-5173-4c87-977d-abc7473d6877}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\カメラ">
+      <UniqueIdentifier>{4d1433ad-71c3-46fa-b115-6d96ad4b443e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\描画">
+      <UniqueIdentifier>{583b3cb4-b26d-4651-b547-4dbe730ac92a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\操作">
+      <UniqueIdentifier>{c46402ba-b3f8-49fb-a1f8-d00cfe575b78}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\空間情報">
+      <UniqueIdentifier>{900f435e-dcda-4330-80a3-0aa50d49d277}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="オブジェクト\UI">
+      <UniqueIdentifier>{22ea7cf5-6877-4c06-86d1-c6933bcb4473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="カメラ管理">
+      <UniqueIdentifier>{c083de6c-312a-4538-96b8-e1497bf235db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="インターフェース\プロトタイプ">
+      <UniqueIdentifier>{d64c00d5-dda3-4d14-b3cb-c8c62bf3c7e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\UI">
+      <UniqueIdentifier>{7737d4ae-9631-48e8-b34b-df48124178fd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\プレイヤー処理">
+      <UniqueIdentifier>{5da1846e-9bd6-4d98-9112-3100996d3802}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\エネミー処理">
+      <UniqueIdentifier>{2c8e5c18-0346-454d-8fe6-42c7cc7e9598}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\弾丸処理">
+      <UniqueIdentifier>{68d21e30-d549-4718-bbad-f54e9169a09b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント\共通処理">
+      <UniqueIdentifier>{0ddaa359-e6c6-44af-9da1-527f77820900}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="コンポーネント基底クラス">
+      <UniqueIdentifier>{9be7905a-e88e-47b0-8dd6-208d67f91edc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="管理クラス\UI">
+      <UniqueIdentifier>{39dbae26-55c8-4dd5-a7dc-b5976c6c59a4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="管理クラス\プロトタイプ">
+      <UniqueIdentifier>{48579471-0714-430b-9489-8398b81399a0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="描画ヘルパー">
+      <UniqueIdentifier>{d58e3e79-e0d7-4650-a7b7-9ba07e2c0a47}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Game.cpp">
+      <Filter>ゲームエンジン</Filter>
+    </ClCompile>
+    <ClCompile Include="LogicComponent.cpp">
+      <Filter>コンポーネント基底クラス</Filter>
+    </ClCompile>
+    <ClCompile Include="DrawComponent.cpp">
+      <Filter>コンポーネント基底クラス</Filter>
+    </ClCompile>
+    <ClCompile Include="Entity.cpp">
+      <Filter>オブジェクト</Filter>
+    </ClCompile>
+    <ClCompile Include="VirtualScreenManager.cpp">
+      <Filter>ゲームエンジン</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteRenderer.cpp">
+      <Filter>描画ヘルパー</Filter>
+    </ClCompile>
+    <ClCompile Include="UIText.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UIButton.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UIPanel.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraEntity.cpp">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClCompile>
+    <ClCompile Include="ResourceManager.cpp">
+      <Filter>リソース管理</Filter>
+    </ClCompile>
+    <ClCompile Include="IScene.cpp">
+      <Filter>インターフェース\シーン</Filter>
+    </ClCompile>
+    <ClCompile Include="IUIVisible.cpp">
+      <Filter>インターフェース\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="IUILogicUpdatable.cpp">
+      <Filter>インターフェース\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="IUITransformable.cpp">
+      <Filter>インターフェース\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="IUIRenderable.cpp">
+      <Filter>インターフェース\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="IUIInteractable.cpp">
+      <Filter>インターフェース\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="IComponent.cpp">
+      <Filter>インターフェース\コンポーネント</Filter>
+    </ClCompile>
+    <ClCompile Include="ComponentBase.cpp">
+      <Filter>コンポーネント基底クラス</Filter>
+    </ClCompile>
+    <ClCompile Include="EntitySystem.cpp">
+      <Filter>オブジェクト</Filter>
+    </ClCompile>
+    <ClCompile Include="IUIElement.cpp">
+      <Filter>インターフェース\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="SphereCollisionComponent.cpp">
+      <Filter>コライダー</Filter>
+    </ClCompile>
+    <ClCompile Include="ICollisionComponent.cpp">
+      <Filter>コライダー</Filter>
+    </ClCompile>
+    <ClCompile Include="ColliderManager.cpp">
+      <Filter>コライダー</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraSystem.cpp">
+      <Filter>カメラ管理</Filter>
+    </ClCompile>
+    <ClCompile Include="TitleScene.cpp">
+      <Filter>シーン</Filter>
+    </ClCompile>
+    <ClCompile Include="BulletEntity.cpp">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClCompile>
+    <ClCompile Include="BulletPrototype.cpp">
+      <Filter>プロトタイプ</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyEntity.cpp">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemySpawner.cpp">
+      <Filter>管理クラス</Filter>
+    </ClCompile>
+    <ClCompile Include="EnemyPrototype.cpp">
+      <Filter>プロトタイプ</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerEntity.cpp">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayScene.cpp">
+      <Filter>シーン</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraComponent.cpp">
+      <Filter>コンポーネント\カメラ</Filter>
+    </ClCompile>
+    <ClCompile Include="RenderModelComponent.cpp">
+      <Filter>コンポーネント\描画</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdPersonCameraComponent.cpp">
+      <Filter>コンポーネント\カメラ</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerControllerComponent.cpp">
+      <Filter>コンポーネント\操作</Filter>
+    </ClCompile>
+    <ClCompile Include="TransformComponent.cpp">
+      <Filter>コンポーネント\空間情報</Filter>
+    </ClCompile>
+    <ClCompile Include="CameraController.cpp">
+      <Filter>コンポーネント\カメラ</Filter>
+    </ClCompile>
+    <ClCompile Include="IEntityPrototype.cpp">
+      <Filter>インターフェース\プロトタイプ</Filter>
+    </ClCompile>
+    <ClCompile Include="UIComponent.cpp">
+      <Filter>コンポーネント\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UIManager.cpp">
+      <Filter>管理クラス\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="UISystem.cpp">
+      <Filter>管理クラス\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="PrototypeManager.cpp">
+      <Filter>管理クラス\プロトタイプ</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveComponent.cpp">
+      <Filter>コンポーネント\共通処理</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelAnimatorComponent.cpp">
+      <Filter>コンポーネント\描画</Filter>
+    </ClCompile>
+    <ClCompile Include="SpriteComponent.cpp">
+      <Filter>コンポーネント\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="BoxCollisionComponent.cpp">
+      <Filter>コライダー</Filter>
+    </ClCompile>
+    <ClCompile Include="CapsuleCollisionComponent.cpp">
+      <Filter>コライダー</Filter>
+    </ClCompile>
+    <ClCompile Include="LogoAnimatorComponent.cpp">
+      <Filter>コンポーネント\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="HealthComponent.cpp">
+      <Filter>コンポーネント\プレイヤー処理</Filter>
+    </ClCompile>
+    <ClCompile Include="BulletShooterComponent.cpp">
+      <Filter>コンポーネント\プレイヤー処理</Filter>
+    </ClCompile>
+    <ClCompile Include="HomingMoveComponent.cpp">
+      <Filter>コンポーネント\共通処理</Filter>
+    </ClCompile>
+    <ClCompile Include="LifetimeComponent.cpp">
+      <Filter>コンポーネント\共通処理</Filter>
+    </ClCompile>
+    <ClCompile Include="Random.cpp">
+      <Filter>定義クラス</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Game.h">
+      <Filter>ゲームエンジン</Filter>
+    </ClInclude>
+    <ClInclude Include="LogicComponent.h">
+      <Filter>コンポーネント基底クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="DrawComponent.h">
+      <Filter>コンポーネント基底クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="Entity.h">
+      <Filter>オブジェクト</Filter>
+    </ClInclude>
+    <ClInclude Include="VirtualScreenManager.h">
+      <Filter>ゲームエンジン</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform2D.h">
+      <Filter>情報クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteRenderer.h">
+      <Filter>描画ヘルパー</Filter>
+    </ClInclude>
+    <ClInclude Include="UIText.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIButton.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIPanel.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraEntity.h">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClInclude>
+    <ClInclude Include="ComponentBase.h">
+      <Filter>コンポーネント基底クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2I.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>リソース管理</Filter>
+    </ClInclude>
+    <ClInclude Include="IScene.h">
+      <Filter>インターフェース\シーン</Filter>
+    </ClInclude>
+    <ClInclude Include="IUIVisible.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="IUILogicUpdatable.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="IUITransformable.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="IUIRenderable.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="IUIInteractable.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="IComponent.h">
+      <Filter>インターフェース\コンポーネント</Filter>
+    </ClInclude>
+    <ClInclude Include="EntitySystem.h">
+      <Filter>オブジェクト</Filter>
+    </ClInclude>
+    <ClInclude Include="IUIElement.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="SphereCollisionComponent.h">
+      <Filter>コライダー</Filter>
+    </ClInclude>
+    <ClInclude Include="ICollisionComponent.h">
+      <Filter>コライダー</Filter>
+    </ClInclude>
+    <ClInclude Include="ColliderManager.h">
+      <Filter>コライダー</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraSystem.h">
+      <Filter>カメラ管理</Filter>
+    </ClInclude>
+    <ClInclude Include="TitleScene.h">
+      <Filter>シーン</Filter>
+    </ClInclude>
+    <ClInclude Include="BulletEntity.h">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClInclude>
+    <ClInclude Include="BulletPrototype.h">
+      <Filter>プロトタイプ</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyEntity.h">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClInclude>
+    <ClInclude Include="ScoreEvent.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemySpawner.h">
+      <Filter>管理クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="EnemyPrototype.h">
+      <Filter>プロトタイプ</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerEntity.h">
+      <Filter>オブジェクト\インスタンス</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionShapeType.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayScene.h">
+      <Filter>シーン</Filter>
+    </ClInclude>
+    <ClInclude Include="Random.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector2F.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceTraits.h">
+      <Filter>リソース管理</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraComponent.h">
+      <Filter>コンポーネント\カメラ</Filter>
+    </ClInclude>
+    <ClInclude Include="RenderModelComponent.h">
+      <Filter>コンポーネント\描画</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdPersonCameraComponent.h">
+      <Filter>コンポーネント\カメラ</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerControllerComponent.h">
+      <Filter>コンポーネント\操作</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformComponent.h">
+      <Filter>コンポーネント\空間情報</Filter>
+    </ClInclude>
+    <ClInclude Include="CameraController.h">
+      <Filter>コンポーネント\カメラ</Filter>
+    </ClInclude>
+    <ClInclude Include="IEntityPrototype.h">
+      <Filter>インターフェース\プロトタイプ</Filter>
+    </ClInclude>
+    <ClInclude Include="UIComponent.h">
+      <Filter>コンポーネント\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UISystem.h">
+      <Filter>管理クラス\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIManager.h">
+      <Filter>管理クラス\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="PrototypeManager.h">
+      <Filter>管理クラス\プロトタイプ</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveComponent.h">
+      <Filter>コンポーネント\共通処理</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelAnimatorComponent.h">
+      <Filter>コンポーネント\描画</Filter>
+    </ClInclude>
+    <ClInclude Include="SpriteComponent.h">
+      <Filter>コンポーネント\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="BoxCollisionComponent.h">
+      <Filter>コライダー</Filter>
+    </ClInclude>
+    <ClInclude Include="CapsuleCollisionComponent.h">
+      <Filter>コライダー</Filter>
+    </ClInclude>
+    <ClInclude Include="LogoAnimatorComponent.h">
+      <Filter>コンポーネント\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="HealthComponent.h">
+      <Filter>コンポーネント\プレイヤー処理</Filter>
+    </ClInclude>
+    <ClInclude Include="BulletShooterComponent.h">
+      <Filter>コンポーネント\プレイヤー処理</Filter>
+    </ClInclude>
+    <ClInclude Include="HomingMoveComponent.h">
+      <Filter>コンポーネント\共通処理</Filter>
+    </ClInclude>
+    <ClInclude Include="LifetimeComponent.h">
+      <Filter>コンポーネント\共通処理</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

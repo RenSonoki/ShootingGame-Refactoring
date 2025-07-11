@@ -3,7 +3,7 @@
 #include <string>
 #include <memory>
 #include <functional>
-#include "DxLib.h" // VECTOR‚Ì‚½‚ß
+#include "DxLib.h"
 
 // ‘O•ûéŒ¾
 class EnemyEntity;
@@ -28,7 +28,7 @@ public:
 private:
     std::wstring m_modelPath;
     float m_speed = 5.0f;
-    float m_radius = 1.0f;
+    float m_radius = 1.5f;
     int m_score = 100;
     std::function<void(int)> m_onDestroyCallback;
 };

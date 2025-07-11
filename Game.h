@@ -12,11 +12,9 @@ private:
 public:
     Game();
 
- /*   void Update();*/
-    void Draw();
+    void Update(float deltaTime);
 
-    // エラー解決のために一時記述
-    void Update(float deltaTime); // deltaTime を引数に追加
+    void Draw();
 
     void ChangeScene(std::unique_ptr<IScene> newScene);
 };
