@@ -1,55 +1,55 @@
 #pragma once
+#include "Vector.h" // テンプレート化したVector.hをインクルード
+#include <optional>   // std::optional を使用
 
-#include "Vector2I.h"
-#include "Vector2F.h"
-#include <DxLib.h>
-
+// 仮想スクリーンの管理クラス
 class VirtualScreenManager
 {
 public:
-	// スケーリングモードの列挙型
     enum class ScalingMode
     {
         StretchToFill,
         KeepAspect
     };
 
-    // 初期化処理
-    // NOTE: 背景色も指定できるように変更
-    static void Init(int virtualW, int virtualH, ScalingMode mode = ScalingMode::KeepAspect, unsigned int backgroundColor = 0x00FFFF);
+    // 唯一のインスタンスを取得するための静的メソッド
+    static VirtualScreenManager& GetInstance();
 
-    // 描画開始（この中で画面クリアも行う）
-    static void BeginDraw();
+    // シングルトンパターンのお作法として、コピーとムーブを禁止
+    VirtualScreenManager(const VirtualScreenManager&) = delete;
+    VirtualScreenManager& operator=(const VirtualScreenManager&) = delete;
 
-    // 描画終了と実画面への転送
-    static void EndDraw();
+    void Init(int virtualW, int virtualH, ScalingMode mode = ScalingMode::KeepAspect, unsigned int backgroundColor = 0x00FFFF);
+    void BeginDraw();
+    void EndDraw();
 
-    // 座標変換メソッド
-    static Vector2I ConvertMousePositionToVirtual();
-    static Vector2I ConvertVirtualToScreen(const Vector2I& virtualPos);
+    Vector2I ConvertMousePositionToVirtual();
+    Vector2I ConvertVirtualToScreen(const Vector2I& virtualPos);
 
     // ゲッター
-    static int GetVirtualWidth();
-    static int GetVirtualHeight();
-    static int GetVirtualScreenHandle();
-    static bool IsInitialized();
-    static ScalingMode GetScalingMode();
+    int GetVirtualWidth() const;
+    int GetVirtualHeight() const;
+    int GetVirtualScreenHandle() const;
+    bool IsInitialized() const;
+    ScalingMode GetScalingMode() const;
 
 private:
-    VirtualScreenManager() = delete;
+    // privateコンストラクタで、外部からの直接的なインスタンス化を禁止
+    VirtualScreenManager() = default;
 
-    // スケーリングパラメータを更新するヘルパー関数
-    static void UpdateScalingParameters();
+    void UpdateScalingParameters();
 
-    // 静的メンバ変数
-    static int s_virtualWidth;
-    static int s_virtualHeight;
-    static int s_virtualScreenHandle;
-    static bool s_initialized;
-    static ScalingMode s_scalingMode;
-    static unsigned int s_backgroundColor;
+    // メンバ変数
+    int m_virtualWidth = 0;
+    int m_virtualHeight = 0;
+    int m_virtualScreenHandle = -1;
+    bool m_initialized = false;
+    ScalingMode m_scalingMode = ScalingMode::KeepAspect;
+    unsigned int m_backgroundColor = 0x00FFFF;
 
-    static Vector2I s_windowSize;    // 現在のウィンドウサイズを保持
-    static Vector2I s_drawOffset;    // 描画オフセット
-	static Vector2F s_scaleRatio;    // XYそれぞれのスケーリング率(StretchToFillでのスケーリング率を保持する)
+    // `std::optional`で「値がまだない」状態を安全に表現
+    std::optional<Vector2I> m_windowSize;
+
+    Vector2I m_drawOffset = { 0, 0 };
+    Vector2F m_scaleRatio = { 1.0f, 1.0f };
 };

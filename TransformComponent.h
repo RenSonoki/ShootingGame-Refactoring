@@ -1,42 +1,49 @@
 #pragma once
+#include "ComponentBase.h"
+#include "Quaternion.h" // 私たちが作成したQuaternionクラス
+#include <DxLib.h>
 
-#include "LogicComponent.h"
-#include "DxLib.h"
-
-// 空間情報（位置・回転・速度）を管理するコンポーネント
-// NOTE: 大規模な開発になった場合は、位置や回転のデータと演算処理を分離する
-class TransformComponent : public LogicComponent
+class TransformComponent : public ComponentBase
 {
 public:
     TransformComponent();
-	explicit TransformComponent(const VECTOR& pos); // explicitを用いてコンストラクタを明示的に定義
+    explicit TransformComponent(const VECTOR& pos);
+    virtual ~TransformComponent() = default;
 
-    // 基底クラスに合わせて override
-    // NOTE: 自分の速度を使って自分の位置を更新する自己完結
     void Update(float deltaTime) override;
+    ComponentID GetID() const override;
 
-    // 位置
+    MATRIX GetWorldMatrix() const;
+
     const VECTOR& GetPosition() const;
     void SetPosition(const VECTOR& pos);
 
-    // 速度
     const VECTOR& GetVelocity() const;
     void SetVelocity(const VECTOR& vel);
 
-    // 回転（Yaw, Pitch, Roll）
-    const VECTOR& GetRotation() const;
-    void SetRotation(const VECTOR& rot);
+    // 回転をクォータニオンで直接設定・取得
+    const Quaternion& GetRotation() const;
+    void SetRotation(const Quaternion& rot);
+    // オイラー角(ラジアン)から回転を設定（互換性のため）
+    void SetRotation(const VECTOR& eulerAngles);
 
-    // スケール
+    // Y軸周りの回転（Yaw）を現在の回転に追加する
+    void AddYaw(float angle);
+    // X軸周りの回転（Pitch）を現在の回転に追加する
+    void AddPitch(float angle);
+
     const VECTOR& GetScale() const;
     void SetScale(const VECTOR& scale);
 
-    // 前方ベクトル
     VECTOR GetForward() const;
+    VECTOR GetRight() const;
+    VECTOR GetUp() const;
 
 private:
+    MATRIX GetRotationMatrix() const;
+
     VECTOR m_position;
     VECTOR m_velocity;
-    VECTOR m_rotation; // x:Pitch, y:Yaw, z:Roll
+    Quaternion m_rotation; // 内部表現をQuaternionに変更
     VECTOR m_scale;
 };

@@ -1,28 +1,21 @@
 #define NOMINMAX
-#include <windows.h> 
+#include "VirtualScreenManager.h"
+#include <DxLib.h>
 #include <stdexcept>
 #include <algorithm>
-#include "VirtualScreenManager.h"
 
-// 静的メンバ定義
-int VirtualScreenManager::s_virtualWidth = 0;
-int VirtualScreenManager::s_virtualHeight = 0;
-int VirtualScreenManager::s_virtualScreenHandle = -1;
-bool VirtualScreenManager::s_initialized = false;
-VirtualScreenManager::ScalingMode VirtualScreenManager::s_scalingMode = VirtualScreenManager::ScalingMode::KeepAspect;
-unsigned int VirtualScreenManager::s_backgroundColor = 0x00FFFF; // シアン
-
-// 追加したメンバ変数の初期化
-Vector2I VirtualScreenManager::s_windowSize = Vector2I(-1, -1); // 未初期化状態
-Vector2I VirtualScreenManager::s_drawOffset = Vector2I(0, 0);
-Vector2F VirtualScreenManager::s_scaleRatio = Vector2F(1.0f, 1.0f);
+// この関数が初めて呼ばれたときに一度だけインスタンスが生成される
+VirtualScreenManager& VirtualScreenManager::GetInstance()
+{
+    static VirtualScreenManager instance;
+    return instance;
+}
 
 void VirtualScreenManager::Init(int virtualW, int virtualH, ScalingMode mode, unsigned int backgroundColor)
 {
-    if (s_initialized)
+    if (m_initialized)
     {
-        // すでに初期化済みの場合は何もしないか、エラーを投げる
-        return;
+        return; // すでに初期化済み
     }
 
     if (GetColorBitDepth() == 0)
@@ -30,49 +23,47 @@ void VirtualScreenManager::Init(int virtualW, int virtualH, ScalingMode mode, un
         throw std::runtime_error("DxLib_Init()より前にVirtualScreenManager::Init()が呼ばれました");
     }
 
-    s_virtualWidth = virtualW;
-    s_virtualHeight = virtualH;
-    s_scalingMode = mode;
-    s_backgroundColor = backgroundColor;
+    m_virtualWidth = virtualW;
+    m_virtualHeight = virtualH;
+    m_scalingMode = mode;
+    m_backgroundColor = backgroundColor;
 
-    s_virtualScreenHandle = MakeScreen(s_virtualWidth, s_virtualHeight, TRUE);
-    if (s_virtualScreenHandle == -1) 
+    m_virtualScreenHandle = MakeScreen(m_virtualWidth, m_virtualHeight, TRUE);
+    if (m_virtualScreenHandle == -1)
     {
         throw std::runtime_error("仮想画面の作成に失敗しました");
     }
 
-    s_initialized = true;
+    m_initialized = true;
 
-    // 初期パラメータ計算
+    // 初期パラメータを計算
     UpdateScalingParameters();
 }
 
 void VirtualScreenManager::BeginDraw()
 {
-    if (!s_initialized) return;
+    if (!m_initialized) return;
 
-    SetDrawScreen(s_virtualScreenHandle);
-    // 背景色とZバッファをクリア
-    // NOTE: WinMain側のClearDrawScreen()とSetBackgroundColor()は不要になります
-    ClearDrawScreen();
-    DrawBox(0, 0, s_virtualWidth, s_virtualHeight, s_backgroundColor, TRUE);
+    SetDrawScreen(m_virtualScreenHandle);
+    ClearDrawScreen(); // Zバッファなどもクリア
+    DrawBox(0, 0, m_virtualWidth, m_virtualHeight, m_backgroundColor, TRUE);
 }
 
 void VirtualScreenManager::EndDraw()
 {
-    if (!s_initialized) return;
+    if (!m_initialized) return;
 
-    // ウィンドウサイズが変更されたかチェックし、必要ならパラメータを更新
+    // 毎フレーム、ウィンドウサイズの変更をチェック
     UpdateScalingParameters();
 
-    // 描画先をバックバッファに
+    // 描画先をバックバッファ（実際の画面）に戻す
     SetDrawScreen(DX_SCREEN_BACK);
 
-    // 計算済みのパラメータを使って描画
-    int drawW = static_cast<int>(s_virtualWidth * s_scaleRatio.x);
-    int drawH = static_cast<int>(s_virtualHeight * s_scaleRatio.y);
+    // 計算済みのパラメータを使って仮想スクリーンを実画面に描画
+    int drawW = static_cast<int>(m_virtualWidth * m_scaleRatio.x);
+    int drawH = static_cast<int>(m_virtualHeight * m_scaleRatio.y);
 
-    DrawExtendGraph(s_drawOffset.x, s_drawOffset.y, s_drawOffset.x + drawW, s_drawOffset.y + drawH, s_virtualScreenHandle, TRUE);
+    DrawExtendGraph(m_drawOffset.x, m_drawOffset.y, m_drawOffset.x + drawW, m_drawOffset.y + drawH, m_virtualScreenHandle, TRUE);
 }
 
 void VirtualScreenManager::UpdateScalingParameters()
@@ -80,33 +71,30 @@ void VirtualScreenManager::UpdateScalingParameters()
     int currentWindowW, currentWindowH;
     GetWindowSize(&currentWindowW, &currentWindowH);
 
-    // ウィンドウサイズが変化していなければ何もしない
-	// NOTE: 処理の無駄を避けるため、ウィンドウサイズが変わったときだけ更新
-    if (s_windowSize.x == currentWindowW && s_windowSize.y == currentWindowH)
+    // `std::optional`を使い、ウィンドウサイズが変更されたかチェック
+    if (m_windowSize.has_value() && m_windowSize->x == currentWindowW && m_windowSize->y == currentWindowH)
     {
-        return;
+        return; // サイズ変更がなければ何もしない
     }
 
-    s_windowSize.x = currentWindowW;
-    s_windowSize.y = currentWindowH;
+    m_windowSize = Vector2I(currentWindowW, currentWindowH);
 
-    if (s_scalingMode == ScalingMode::StretchToFill)
+    if (m_scalingMode == ScalingMode::StretchToFill)
     {
-        s_scaleRatio.x = s_windowSize.x / static_cast<float>(s_virtualWidth);
-        s_scaleRatio.y = s_windowSize.y / static_cast<float>(s_virtualHeight);
-        s_drawOffset = Vector2I(0, 0);
+        m_scaleRatio.x = m_windowSize->x / static_cast<float>(m_virtualWidth);
+        m_scaleRatio.y = m_windowSize->y / static_cast<float>(m_virtualHeight);
+        m_drawOffset = { 0, 0 };
     }
-    else if (s_scalingMode == ScalingMode::KeepAspect)
+    else // KeepAspect
     {
-        float scale = std::min(s_windowSize.x / static_cast<float>(s_virtualWidth),
-            s_windowSize.y / static_cast<float>(s_virtualHeight));
-        s_scaleRatio.x = scale;
-        s_scaleRatio.y = scale;
+        float scale = std::min(m_windowSize->x / static_cast<float>(m_virtualWidth),
+            m_windowSize->y / static_cast<float>(m_virtualHeight));
+        m_scaleRatio = { scale, scale };
 
-        int drawW = static_cast<int>(s_virtualWidth * scale);
-        int drawH = static_cast<int>(s_virtualHeight * scale);
-        s_drawOffset.x = (s_windowSize.x - drawW) / 2;
-        s_drawOffset.y = (s_windowSize.y - drawH) / 2;
+        int drawW = static_cast<int>(m_virtualWidth * scale);
+        int drawH = static_cast<int>(m_virtualHeight * scale);
+        m_drawOffset.x = (m_windowSize->x - drawW) / 2;
+        m_drawOffset.y = (m_windowSize->y - drawH) / 2;
     }
 }
 
@@ -115,25 +103,26 @@ Vector2I VirtualScreenManager::ConvertMousePositionToVirtual()
     int mouseX, mouseY;
     GetMousePoint(&mouseX, &mouseY);
 
-    int relX = mouseX - s_drawOffset.x;
-    int relY = mouseY - s_drawOffset.y;
+    int relX = mouseX - m_drawOffset.x;
+    int relY = mouseY - m_drawOffset.y;
 
     return Vector2I(
-        static_cast<int>(relX / s_scaleRatio.x),
-        static_cast<int>(relY / s_scaleRatio.y)
+        static_cast<int>(relX / m_scaleRatio.x),
+        static_cast<int>(relY / m_scaleRatio.y)
     );
 }
 
 Vector2I VirtualScreenManager::ConvertVirtualToScreen(const Vector2I& virtualPos)
 {
     return Vector2I(
-        static_cast<int>(s_drawOffset.x + virtualPos.x * s_scaleRatio.x),
-        static_cast<int>(s_drawOffset.y + virtualPos.y * s_scaleRatio.y)
+        static_cast<int>(m_drawOffset.x + virtualPos.x * m_scaleRatio.x),
+        static_cast<int>(m_drawOffset.y + virtualPos.y * m_scaleRatio.y)
     );
 }
 
-int VirtualScreenManager::GetVirtualWidth() { return s_virtualWidth; }
-int VirtualScreenManager::GetVirtualHeight() { return s_virtualHeight; }
-int VirtualScreenManager::GetVirtualScreenHandle() { return s_virtualScreenHandle; }
-bool VirtualScreenManager::IsInitialized() { return s_initialized; }
-VirtualScreenManager::ScalingMode VirtualScreenManager::GetScalingMode() { return s_scalingMode; }
+// --- ゲッターの実装 ---
+int VirtualScreenManager::GetVirtualWidth() const { return m_virtualWidth; }
+int VirtualScreenManager::GetVirtualHeight() const { return m_virtualHeight; }
+int VirtualScreenManager::GetVirtualScreenHandle() const { return m_virtualScreenHandle; }
+bool VirtualScreenManager::IsInitialized() const { return m_initialized; }
+VirtualScreenManager::ScalingMode VirtualScreenManager::GetScalingMode() const { return m_scalingMode; }

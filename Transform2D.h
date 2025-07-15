@@ -30,6 +30,17 @@ struct VECTOR2
         }
         return { 0.0f, 0.0f };
     }
+
+    // 指定した角度（ラジアン）でこのベクトルを回転させた新しいベクトルを返す
+    VECTOR2 RotatedBy(float angleRad) const
+    {
+        float sinRot = sinf(angleRad);
+        float cosRot = cosf(angleRad);
+        return {
+            x * cosRot - y * sinRot,
+            x * sinRot + y * cosRot
+        };
+    }
 };
 
 // --- VECTOR2のためのグローバルな演算子 ---
@@ -97,29 +108,27 @@ inline void Transform2D::Reset()
 
 inline bool Transform2D::Contains(const VECTOR2& worldPoint, const VECTOR2& size) const
 {
-    // スケールが0以下の場合は当たり判定がないものとする
     if (m_scale.x <= 0.0f || m_scale.y <= 0.0f) {
         return false;
     }
 
-    // 1. ピボット（回転・拡縮の中心）のオフセットを計算
-    VECTOR2 pivotOffset = { m_pivot.x * size.x, m_pivot.y * size.y };
+    // Step 1: 逆平行移動
+    VECTOR2 point = worldPoint - m_position;
 
-    // 2. 判定対象の点(worldPoint)を、Transformの基点を原点とした座標系に変換
-    VECTOR2 pointInLocal = worldPoint - m_position - pivotOffset;
+    // Step 2: 逆回転 (ヘルパーメソッドを使って簡潔に)
+    if (m_rotation != 0.0f) {
+        point = point.RotatedBy(-m_rotation); // ここがスッキリ！
+    }
 
-    // 3. 2の点を、Transformの回転と逆方向に回転させる
-    float sinRot = sinf(-m_rotation); // 逆回転なので角度を反転
-    float cosRot = cosf(-m_rotation);
-    VECTOR2 rotatedPoint = {
-        pointInLocal.x * cosRot - pointInLocal.y * sinRot,
-        pointInLocal.x * sinRot + pointInLocal.y * cosRot
-    };
+    // Step 3: 逆スケール
+    point.x /= m_scale.x;
+    point.y /= m_scale.y;
 
-    // 4. 矩形の半分のサイズを計算（スケール適用後）
-    VECTOR2 halfSize = { (size.x * m_scale.x) / 2.0f, (size.y * m_scale.y) / 2.0f };
+    // Step 4: ピボットを考慮して判定
+    VECTOR2 halfSize = { size.x / 2.0f, size.y / 2.0f };
+    VECTOR2 pivotOffset = { (m_pivot.x - 0.5f) * size.x, (m_pivot.y - 0.5f) * size.y };
+    point -= pivotOffset;
 
-    // 5. 回転されていないローカル座標系で、点が矩形内（-halfSize ~ +halfSize）にあるか判定
-    return (rotatedPoint.x >= -halfSize.x && rotatedPoint.x <= halfSize.x &&
-        rotatedPoint.y >= -halfSize.y && rotatedPoint.y <= halfSize.y);
+    return (point.x >= -halfSize.x && point.x <= halfSize.x &&
+        point.y >= -halfSize.y && point.y <= halfSize.y);
 }

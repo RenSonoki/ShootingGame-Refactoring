@@ -97,6 +97,15 @@
     <Filter Include="描画ヘルパー">
       <UniqueIdentifier>{d58e3e79-e0d7-4650-a7b7-9ba07e2c0a47}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UI\Image">
+      <UniqueIdentifier>{a1505af0-c8f1-4d44-984a-a51c92a08682}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Button">
+      <UniqueIdentifier>{fc768ceb-564c-4e53-a557-44a416514197}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UI\Text">
+      <UniqueIdentifier>{6f613da9-8193-40af-8460-0ec934b2eda4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Game.cpp">
@@ -117,12 +126,6 @@
     <ClCompile Include="SpriteRenderer.cpp">
       <Filter>描画ヘルパー</Filter>
     </ClCompile>
-    <ClCompile Include="UIText.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
-    <ClCompile Include="UIButton.cpp">
-      <Filter>UI</Filter>
-    </ClCompile>
     <ClCompile Include="UIPanel.cpp">
       <Filter>UI</Filter>
     </ClCompile>
@@ -135,21 +138,6 @@
     <ClCompile Include="IScene.cpp">
       <Filter>インターフェース\シーン</Filter>
     </ClCompile>
-    <ClCompile Include="IUIVisible.cpp">
-      <Filter>インターフェース\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="IUILogicUpdatable.cpp">
-      <Filter>インターフェース\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="IUITransformable.cpp">
-      <Filter>インターフェース\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="IUIRenderable.cpp">
-      <Filter>インターフェース\UI</Filter>
-    </ClCompile>
-    <ClCompile Include="IUIInteractable.cpp">
-      <Filter>インターフェース\UI</Filter>
-    </ClCompile>
     <ClCompile Include="IComponent.cpp">
       <Filter>インターフェース\コンポーネント</Filter>
     </ClCompile>
@@ -158,9 +146,6 @@
     </ClCompile>
     <ClCompile Include="EntitySystem.cpp">
       <Filter>オブジェクト</Filter>
-    </ClCompile>
-    <ClCompile Include="IUIElement.cpp">
-      <Filter>インターフェース\UI</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="SphereCollisionComponent.cpp">
@@ -241,9 +226,6 @@
     <ClCompile Include="SpriteComponent.cpp">
       <Filter>コンポーネント\UI</Filter>
     </ClCompile>
-    <ClCompile Include="BoxCollisionComponent.cpp">
-      <Filter>コライダー</Filter>
-    </ClCompile>
     <ClCompile Include="CapsuleCollisionComponent.cpp">
       <Filter>コライダー</Filter>
     </ClCompile>
@@ -264,6 +246,36 @@
     </ClCompile>
     <ClCompile Include="Random.cpp">
       <Filter>定義クラス</Filter>
+    </ClCompile>
+    <ClCompile Include="UIElement.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageRenderer.cpp">
+      <Filter>コンポーネント\描画</Filter>
+    </ClCompile>
+    <ClCompile Include="SimpleSpriteRenderer.cpp">
+      <Filter>UI\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="UIImage.cpp">
+      <Filter>UI\Image</Filter>
+    </ClCompile>
+    <ClCompile Include="ButtonRenderer.cpp">
+      <Filter>UI\Button</Filter>
+    </ClCompile>
+    <ClCompile Include="ButtonInteractor.cpp">
+      <Filter>UI\Button</Filter>
+    </ClCompile>
+    <ClCompile Include="UIButton.cpp">
+      <Filter>UI\Button</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
+      <Filter>UI\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="UIText.cpp">
+      <Filter>UI\Text</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionCheckFunctions.cpp">
+      <Filter>コライダー</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -288,12 +300,6 @@
     <ClInclude Include="SpriteRenderer.h">
       <Filter>描画ヘルパー</Filter>
     </ClInclude>
-    <ClInclude Include="UIText.h">
-      <Filter>UI</Filter>
-    </ClInclude>
-    <ClInclude Include="UIButton.h">
-      <Filter>UI</Filter>
-    </ClInclude>
     <ClInclude Include="UIPanel.h">
       <Filter>UI</Filter>
     </ClInclude>
@@ -302,9 +308,6 @@
     </ClInclude>
     <ClInclude Include="ComponentBase.h">
       <Filter>コンポーネント基底クラス</Filter>
-    </ClInclude>
-    <ClInclude Include="Vector2I.h">
-      <Filter>定義クラス</Filter>
     </ClInclude>
     <ClInclude Include="ResourceManager.h">
       <Filter>リソース管理</Filter>
@@ -381,9 +384,6 @@
     <ClInclude Include="Random.h">
       <Filter>定義クラス</Filter>
     </ClInclude>
-    <ClInclude Include="Vector2F.h">
-      <Filter>定義クラス</Filter>
-    </ClInclude>
     <ClInclude Include="ResourceTraits.h">
       <Filter>リソース管理</Filter>
     </ClInclude>
@@ -429,9 +429,6 @@
     <ClInclude Include="SpriteComponent.h">
       <Filter>コンポーネント\UI</Filter>
     </ClInclude>
-    <ClInclude Include="BoxCollisionComponent.h">
-      <Filter>コライダー</Filter>
-    </ClInclude>
     <ClInclude Include="CapsuleCollisionComponent.h">
       <Filter>コライダー</Filter>
     </ClInclude>
@@ -449,6 +446,57 @@
     </ClInclude>
     <ClInclude Include="LifetimeComponent.h">
       <Filter>コンポーネント\共通処理</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="ComponentID.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="UIRenderer.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIInteractor.h">
+      <Filter>インターフェース\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UIElement.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Color.h">
+      <Filter>描画ヘルパー</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageRenderer.h">
+      <Filter>コンポーネント\描画</Filter>
+    </ClInclude>
+    <ClInclude Include="SimpleSpriteRenderer.h">
+      <Filter>UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="UIImage.h">
+      <Filter>UI\Image</Filter>
+    </ClInclude>
+    <ClInclude Include="ButtonRenderer.h">
+      <Filter>UI\Button</Filter>
+    </ClInclude>
+    <ClInclude Include="ButtonInteractor.h">
+      <Filter>UI\Button</Filter>
+    </ClInclude>
+    <ClInclude Include="UIButton.h">
+      <Filter>UI\Button</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
+      <Filter>UI\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="UIText.h">
+      <Filter>UI\Text</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionSystemTypes.h">
+      <Filter>定義クラス</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionCheckFunctions.h">
+      <Filter>コライダー</Filter>
+    </ClInclude>
+    <ClInclude Include="Quaternion.h">
+      <Filter>定義クラス</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,69 +1,19 @@
 #include "UIButton.h"
-#include "DxLib.h"
-#include "VirtualScreenManager.h" // IsMouseOverで必要
+#include "ButtonRenderer.h"
+#include "ButtonInteractor.h"
+#include <memory>
 
 UIButton::UIButton(const std::wstring& normalPath,
     const std::wstring& hoverPath,
     const std::wstring& pressedPath)
 {
-    // 各SpriteRendererに画像をロードさせる
-    m_rendererNormal.Load(normalPath);
+    // 自身の振る舞いを担当する「部品」を生成
+    auto renderer = std::make_unique<ButtonRenderer>(normalPath, hoverPath, pressedPath);
+    auto interactor = std::make_unique<ButtonInteractor>();
 
-    // パスが空なら、通常時の画像をコピーして使う
-    m_rendererHover = hoverPath.empty() ? m_rendererNormal : SpriteRenderer(hoverPath);
-    m_rendererPressed = pressedPath.empty() ? m_rendererNormal : SpriteRenderer(hoverPath);
-}
-
-void UIButton::UpdateInteraction()
-{
-    if (!IsVisible() || !IsActive())
-    {
-        // 非アクティブ時は状態をNormalに戻す
-        m_state = ButtonState::Normal;
-        return;
-    }
-
-    bool isOver = IsMouseOver();
-    bool isDown = (GetMouseInput() & MOUSE_INPUT_LEFT) != 0;
-
-    if (isOver)
-    {
-        m_state = isDown ? ButtonState::Pressed : ButtonState::Hovered;
-
-        // マウスが上で、前のフレームで押されていて、今フレームで離された瞬間にクリックイベント発火
-        if (m_previousMouseDown && !isDown && m_onClick)
-        {
-            m_onClick();
-        }
-    }
-    else
-    {
-        m_state = ButtonState::Normal;
-    }
-
-    m_previousMouseDown = isDown;
-}
-
-void UIButton::Draw(int targetScreen)
-{
-    if (!IsVisible()) return;
-
-    // 状態に応じて、担当のSpriteRendererに描画を依頼するだけ
-    const SpriteRenderer* rendererToUse = &m_rendererNormal;
-    switch (m_state)
-    {
-    case ButtonState::Hovered:
-        rendererToUse = &m_rendererHover;
-        break;
-    case ButtonState::Pressed:
-        rendererToUse = &m_rendererPressed;
-        break;
-    default:
-        break;
-    }
-
-    // SpriteRendererのDrawは Transform を正しく扱ってくれる
-    rendererToUse->Draw(GetTransform(), true);
+    // 生成した部品を自身に装着する
+    SetRenderer(std::move(renderer));
+    SetInteractor(std::move(interactor));
 }
 
 void UIButton::SetOnClick(std::function<void()> callback)
@@ -71,22 +21,27 @@ void UIButton::SetOnClick(std::function<void()> callback)
     m_onClick = std::move(callback);
 }
 
+void UIButton::InvokeOnClick()
+{
+    if (m_onClick) { m_onClick(); }
+}
+
 UIButton::ButtonState UIButton::GetState() const
 {
     return m_state;
 }
 
-bool UIButton::IsMouseOver() const
+void UIButton::SetState(ButtonState newState)
 {
-    // Transform2D の Contains メソッドを使って正確な当たり判定を行う
-    Vector2I mousePosInt = VirtualScreenManager::ConvertMousePositionToVirtual();
-    VECTOR2 mousePos = { (float)mousePosInt.x, (float)mousePosInt.y };
+    m_state = newState;
+}
 
-    // ボタンのサイズは、通常時の画像のサイズを基準にする
-    VECTOR2 size = {
-        (float)m_rendererNormal.GetOriginalWidth(),
-        (float)m_rendererNormal.GetOriginalHeight()
-    };
-
-    return GetTransform().Contains(mousePos, size);
+VECTOR2 UIButton::GetBoundingSize() const
+{
+    // 自身が所有するRendererにサイズの問い合わせを委譲する
+    if (const auto* renderer = static_cast<const ButtonRenderer*>(m_renderer.get()))
+    {
+        return renderer->GetNormalSpriteSize();
+    }
+    return { 0.0f, 0.0f };
 }

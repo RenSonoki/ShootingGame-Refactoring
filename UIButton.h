@@ -1,46 +1,28 @@
 #pragma once
-
-#include "UIComponent.h"
-#include "IUIInteractable.h"
-#include "SpriteRenderer.h" // SpriteRenderer を利用する
+#include "UIElement.h"
 #include <functional>
 #include <string>
-#include <memory>
 
-class UIButton : public UIComponent, public IUIInteractable
+// 振る舞いを外部部品に委譲する、データ中心のボタンクラス
+class UIButton : public UIElement
 {
 public:
-	// ボタンの状態を表す列挙型
-    enum class ButtonState
-    {
-        Normal,
-        Hovered,
-        Pressed
-    };
+    enum class ButtonState { Normal, Hovered, Pressed };
 
     UIButton(const std::wstring& normalPath,
         const std::wstring& hoverPath = L"",
         const std::wstring& pressedPath = L"");
 
-    // IUIInteractable の実装
-    void UpdateInteraction() override;
-    void OnClick() override {} // 今回はSetOnClickで直接コールバックを登録
-
-    // UIComponent の実装
-    void Draw(int targetScreen = -1) override;
-
+    // --- 外部から使うためのインターフェース ---
     void SetOnClick(std::function<void()> callback);
+
+    // --- システム内部（部品）から使われるメソッド ---
+    void InvokeOnClick();
     ButtonState GetState() const;
+    void SetState(ButtonState newState);
+    VECTOR2 GetBoundingSize() const override;
 
 private:
-    // intハンドルではなく、SpriteRendererを状態ごとに持つ
-    SpriteRenderer m_rendererNormal;
-    SpriteRenderer m_rendererHover;
-    SpriteRenderer m_rendererPressed;
-
     ButtonState m_state = ButtonState::Normal;
     std::function<void()> m_onClick;
-
-    bool IsMouseOver() const;
-    bool m_previousMouseDown = false;
 };

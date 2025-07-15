@@ -1,4 +1,5 @@
 #pragma once
+// UIElement‚ÉˆÈ~Ï‚İ
 
 #include "ComponentBase.h"
 #include "IUIRenderable.h"

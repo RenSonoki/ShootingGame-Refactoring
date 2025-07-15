@@ -1,64 +1,20 @@
 #include "UIText.h"
-#include "DxLib.h"
+#include "TextRenderer.h" // 自身に装着する部品
+#include <memory>
 
-UIText::UIText(const std::wstring& text, unsigned int color)
+UIText::UIText(const std::wstring& text, unsigned int color, int fontSize)
     : m_text(text)
-    , m_color(color == 0 ? ::GetColor(255, 255, 255) : color)  // ← グローバル呼び出し
-    , m_fontSize(20)
+    , m_color(color)
+    , m_fontSize(fontSize)
 {
+    // 自身の「描画」振る舞いを担当する部品を生成し、装着する
+    auto renderer = std::make_unique<TextRenderer>();
+    SetRenderer(std::move(renderer));
 }
 
-void UIText::Draw(int targetScreen)
-{
-    if (!IsVisible()) return;
-
-    // 現在のフォントサイズを保持
-    int oldFontSize = GetFontSize();
-    SetFontSize(m_fontSize);
-
-    auto pos = GetTransform().GetPosition();
-
-    if (targetScreen != -1)
-    {
-        int prev = GetDrawScreen();
-        SetDrawScreen(targetScreen);
-        DrawString(pos.x, pos.y, m_text.c_str(), m_color);
-        SetDrawScreen(prev);
-    }
-    else
-    {
-        DrawString(pos.x, pos.y, m_text.c_str(), m_color);
-    }
-
-    SetFontSize(oldFontSize);
-}
-
-void UIText::SetText(const std::wstring& text)
-{
-    m_text = text;
-}
-
-void UIText::SetColor(unsigned int color)
-{
-    m_color = color;
-}
-
-void UIText::SetFontSizePx(int size)
-{
-    m_fontSize = size;
-}
-
-const std::wstring& UIText::GetText() const
-{
-    return m_text;
-}
-
-unsigned int UIText::GetColor() const
-{
-    return m_color;
-}
-
-int UIText::GetFontSizePx() const
-{
-    return m_fontSize;
-}
+void UIText::SetText(const std::wstring& text) { m_text = text; }
+void UIText::SetColor(unsigned int color) { m_color = color; }
+void UIText::SetFontSizePx(int size) { m_fontSize = size; }
+const std::wstring& UIText::GetText() const { return m_text; }
+unsigned int UIText::GetColor() const { return m_color; }
+int UIText::GetFontSizePx() const { return m_fontSize; }
