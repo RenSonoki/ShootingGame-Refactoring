@@ -1,46 +1,37 @@
 #pragma once
-
 #include "ICollisionComponent.h"
 #include <memory>
 #include <utility> // for std::pair
-#include <DxLib.h>
 
-// 前方宣言
 class TransformComponent;
 
-// カプセル形状のコライダーコンポーネント
+// カプセル形状のコライダーコンポーネント（リファクタリング後）
 class CapsuleCollisionComponent : public ICollisionComponent
 {
 public:
-    // カプセルの半径と、中心線の長さ（高さ）を指定して作成
     explicit CapsuleCollisionComponent(float radius, float height);
+    virtual ~CapsuleCollisionComponent() = default;
 
-    // ライフサイクルメソッド
+    // --- ライフサイクルメソッド ---
     void Start() override;
     void Update(float deltaTime) override {}
 
-    // Visitorパターン関連メソッド
-    bool CheckCollision(const ICollisionComponent& other) const override;
-    bool Accept(const ICollisionComponent& other) const override;
-    bool Visit(const SphereCollisionComponent& sphere) const override;
-    bool Visit(const BoxCollisionComponent& box) const override;
-    bool Visit(const CapsuleCollisionComponent& capsule) const override;
-
-    // 形状情報
+    // --- ICollisionComponentインターフェースの実装 ---
+    CollisionShapeType GetShapeType() const override { return CollisionShapeType::Capsule; }
     VECTOR GetCenter() const override;
+
+    // --- このクラス固有の機能 ---
     float GetRadius() const;
     float GetHeight() const;
 
-    // カプセルの中心線（線分）の始点と終点をワールド座標で取得
-    std::pair<VECTOR, VECTOR> GetLineSegment() const;
+    // ワールド空間でのカプセルの中心線（線分）を取得する
+    std::pair<VECTOR, VECTOR> GetWorldLineSegment() const;
 
     void SetBaseRadius(float radius);
     void SetBaseHeight(float height);
 
-    CollisionShapeType GetShapeType() const override { return CollisionShapeType::Capsule; }
-
 private:
-    float m_baseRadius; // スケール適用前の基本半径
-    float m_baseHeight; // スケール適用前の基本高さ
-    std::shared_ptr<TransformComponent> m_transform;
+    float m_baseRadius;
+    float m_baseHeight;
+    std::weak_ptr<TransformComponent> m_transform;
 };

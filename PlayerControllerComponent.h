@@ -1,26 +1,28 @@
 #pragma once
-
-#include "LogicComponent.h"
+#include "ComponentBase.h"
 #include <memory>
 
 // 前方宣言
-class TransformComponent; 
+class TransformComponent;
+class CameraComponent;
 
-// プレイヤーの移動入力を処理し、Transformの速度を制御するコンポーネント
-class PlayerControllerComponent : public LogicComponent
+class PlayerControllerComponent : public ComponentBase
 {
 public:
     PlayerControllerComponent();
+    virtual ~PlayerControllerComponent() = default;
 
-	// ライフサイクルメソッド
     void Start() override;
     void Update(float deltaTime) override;
 
-    // 移動速度の設定
+    void SetCamera(std::shared_ptr<CameraComponent> camera);
     void SetMoveSpeed(float speed);
-    float GetMoveSpeed() const;
+    void SetRotationSpeed(float speed);
 
 private:
-    std::shared_ptr<TransformComponent> m_transform;
-    float m_moveSpeed = 5.0f; // 速度なので、少し大きめの値に変更
+    std::weak_ptr<TransformComponent> m_transform;
+    std::weak_ptr<CameraComponent> m_camera;
+
+    float m_moveSpeed = 5.0f;
+    float m_rotationSpeed = 10.0f; // 旋回速度
 };

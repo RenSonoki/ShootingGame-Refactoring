@@ -1,4 +1,7 @@
+#define NOMINMAX
+#include <windows.h>
 #include <DxLib.h>
+
 #include "Game.h"
 #include "VirtualScreenManager.h"
 #include "Random.h"
@@ -8,8 +11,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     // ログ出力無効化
     SetOutApplicationLogValidFlag(FALSE);
 
-    // 仮想画面サイズ（ゲーム設計で定義）
-    // NOTE: 将来的に設定ファイルなどから読み込めるようにすると、より柔軟になります。
+    // 仮想画面サイズ
     const int VIRTUAL_WIDTH = 1280;
     const int VIRTUAL_HEIGHT = 720;
 
@@ -17,7 +19,6 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     ChangeWindowMode(TRUE);
 
     // DxLibの初期化と画面設定
-    // NOTE: DxLib_Initの前にウィンドウモードなどを設定しておく必要があります。
     SetGraphMode(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, 32);
     if (DxLib_Init() == -1)
     {
@@ -27,43 +28,45 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     // 3D描画のための設定
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);
+    SetCameraNearFar(0.01f, 1000.0f);
 
     // 描画先をバックバッファに設定
     SetDrawScreen(DX_SCREEN_BACK);
 
-    // 背景色
-    SetBackgroundColor(0, 255, 255);
+    // --- 各シングルトンマネージャの初期化 ---
 
-    // カメラのクリップ面設定
-    SetCameraNearFar(0.01f, 1000.0f);
-
-    // 仮想画面初期化
-    VirtualScreenManager::Init(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
+    // 仮想画面初期化 (GetInstance() を経由して呼び出す)
+    // NOTE: 背景色はここで指定。WinMain側のSetBackgroundColorは不要。
+    VirtualScreenManager::GetInstance().Init(VIRTUAL_WIDTH, VIRTUAL_HEIGHT);
 
     // 乱数エンジンの初期化
-    Random::Init();
+    // NOTE: GetInstance()が初めて呼ばれた時にコンストラクタが走り、シードが設定される
+    Random::GetInstance();
 
-    // Gameインスタンス生成（内部でリソース管理＆シーン初期化）
+    // Gameインスタンス生成
     Game game;
 
     // メインループ
     LONGLONG prevTime = GetNowHiPerformanceCount();
     while (ProcessMessage() == 0 && CheckHitKey(KEY_INPUT_ESCAPE) == 0)
     {
+        // DeltaTimeの計算
         LONGLONG currentTime = GetNowHiPerformanceCount();
-        float deltaTime = (currentTime - prevTime) / 1000000.0f; // マイクロ秒を秒に変換
+        float deltaTime = (currentTime - prevTime) / 1000000.0f;
         prevTime = currentTime;
 
-        VirtualScreenManager::BeginDraw();  // 仮想画面に描画開始
+        // --- 描画処理 ---
+        // 描画の開始から終了までをVirtualScreenManagerに任せる
+        VirtualScreenManager::GetInstance().BeginDraw();
 
-        // 画面クリア（BeginDrawの後、個別の描画の前に呼ぶのが一般的）
-        ClearDrawScreen();
+        // ゲームの更新と描画
+        game.Update(deltaTime);
+        game.Draw();
 
-        game.Update(deltaTime);  // ゲームロジック更新
-        game.Draw();    // ゲーム描画
+        // 仮想画面の内容を実画面に転送
+        VirtualScreenManager::GetInstance().EndDraw();
 
-        VirtualScreenManager::EndDraw();    // 仮想画面の内容を実画面へ
-
+        // 実画面の内容をディスプレイに反映
         ScreenFlip();
     }
 

@@ -1,28 +1,38 @@
 #include "ICollisionComponent.h"
 #include "ColliderManager.h"
+#include "Entity.h" // Entityの完全な定義が必要
 
 ICollisionComponent::~ICollisionComponent()
 {
-	// コンポーネントが破棄される際にColliderManagerから登録を解除する
-    ColliderManager::Instance().Unregister(shared_from_this());
+    // コンポーネントが破棄される際にColliderManagerから登録を解除する
+    if (auto sharedThis = std::enable_shared_from_this<ICollisionComponent>::shared_from_this())
+    {
+        ColliderManager::Instance().Unregister(sharedThis);
+    }
 }
 
-void ICollisionComponent::SetOnCollision(std::function<void(Entity*)> callback)
+void ICollisionComponent::SetOnCollision(std::function<void(std::shared_ptr<Entity>)> callback)
 {
     m_onCollision = std::move(callback);
 }
 
-void ICollisionComponent::TriggerCollision(Entity* other) const
+void ICollisionComponent::TriggerCollision(std::shared_ptr<Entity> other) const
 {
-    if (m_onCollision) m_onCollision(other);
+    if (m_onCollision)
+    {
+        m_onCollision(other);
+    }
 }
 
-void ICollisionComponent::SetOwner(Entity* owner)
+void ICollisionComponent::SetOwner(std::weak_ptr<Entity> owner)
 {
-    m_owner = owner;
-    LogicComponent::SetOwner(owner);  // ベースクラス処理も呼ぶ
+    // まず、親クラスのSetOwnerを呼び出して、m_ownerを設定
+    ComponentBase::SetOwner(owner);
 
-	// 生成時に登録する
-
-    ColliderManager::Instance().Register(shared_from_this());
+    // 自身のshared_ptrを取得して、ColliderManagerに登録する
+    // EntityのAddComponentがshared_ptrでComponentを生成していることが前提
+    if (auto sharedThis = std::enable_shared_from_this<ICollisionComponent>::shared_from_this())
+    {
+        ColliderManager::Instance().Register(sharedThis);
+    }
 }

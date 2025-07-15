@@ -37,7 +37,7 @@ PlayScene::PlayScene()
     m_enemyPrototype = std::make_shared<EnemyPrototype>();
 
     // 2. セッターを使って、設計図のパラメータを設定
-    m_enemyPrototype->SetModelPath(L"Assets/Models/enemy.mv1");
+    m_enemyPrototype->SetModelPath(L"Assets/Models/enemy.pmx");
     m_enemyPrototype->SetSpeed(5.0f);
     m_enemyPrototype->SetCollisionRadius(1.5f);
     m_enemyPrototype->SetOnDestroyCallback([this](int score) { this->AddScore(score); });
@@ -53,7 +53,7 @@ void PlayScene::OnEnter(Game& game)
     if (m_bgmHandle != -1) PlaySoundMem(m_bgmHandle, DX_PLAYTYPE_LOOP);
 
     m_player = std::make_shared<PlayerEntity>(
-        L"Assets/Models/player.pmx", m_entitySystem.get(), m_bulletPrototype
+        L"Assets/Models/player.mv1", m_entitySystem.get(), m_bulletPrototype
     );
     m_entitySystem->AddEntity(m_player);
 

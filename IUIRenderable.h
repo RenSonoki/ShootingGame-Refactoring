@@ -5,5 +5,5 @@ class IUIRenderable
 {
 public:
     virtual ~IUIRenderable() = default;
-    virtual void Draw(int targetScreen = -1) = 0; // -1: DX_SCREEN_BACK など
+    virtual void Draw() = 0; // 引数は不要。Rendererに任せるため。
 };

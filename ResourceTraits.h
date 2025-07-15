@@ -2,10 +2,10 @@
 #include <DxLib.h>
 #include <string>
 
-// NOTE: 新しいリソースを追加する場合
-// 1: ResourceTraits.hに新しいタグを定義する
-// 2: 新しいTraitsを特殊化
-// 3: ResourceManager.hのm_cachesタプルにCache<EffectTag>を追加
+// NOTE: 新しいリソースEffectを追加したい場合
+//    1: ResourceTraits<EffectTag>を定義
+//    2: ResourceManager.hのAllCachesというtupleにCache<EffectTag>を一行追加
+//    3: Get<EffectTag>(...)が自動的に使えるようになります。
 
 // ---リソースの種類を識別するための「タグ」を定義 ---
 // NOTE: 中身は空で、型そのものが識別子になります。

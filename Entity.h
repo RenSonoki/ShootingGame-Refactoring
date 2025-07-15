@@ -1,110 +1,108 @@
 #pragma once
-
 #include <vector>
 #include <memory>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
-#include <typeindex>
-#include <algorithm>
+#include "ComponentBase.h"
 
-// 前方宣言
-class IComponent;
-class ComponentBase;
-class LogicComponent;
-class DrawComponent;
-class UIComponent;
-
-// 
-class Entity
+// Entity自身もshared_ptrで管理されることを想定し、
+// 安全に自身のshared_ptrを取得できるようにする
+class Entity : public std::enable_shared_from_this<Entity>
 {
 public:
     Entity();
     virtual ~Entity() = default;
 
-    // IDと状態管理
-    int GetID() const;
+    // --- コンポーネント管理 ---
 
-	// アクティブ状態の取得と設定
-    bool IsActive() const;
-    void SetActive(bool value);
+    // コンポーネントを型とコンストラクタ引数を指定して、Entity内部で生成・追加する
+    template<typename T, typename... Args>
+    std::shared_ptr<T> AddComponent(Args&&... args);
 
-    // タグ機能
-    void SetTag(const std::wstring& tag);
-    const std::wstring& GetTag() const;
-
-    // 親子構造（3Dシーン用）
-    void SetParent(Entity* parent);
-    Entity* GetParent() const;
-    const std::vector<std::shared_ptr<Entity>>& GetChildren() const;
-    void AddChild(std::shared_ptr<Entity> child);
-
-    // コンポーネント管理
-    void AddComponent(const std::shared_ptr<ComponentBase>& component);
-
+    // 高速なマップ検索でコンポーネントを取得する
     template<typename T>
     std::shared_ptr<T> GetComponent() const;
 
+    // 指定した型のコンポーネントを持っているか確認する
     template<typename T>
-    void RemoveComponent();
+    bool HasComponent() const;
 
-    // 特定の型のコンポーネントリストを直接取得する
-    const std::vector<std::shared_ptr<UIComponent>>& GetUIComponents() const;
+    // --- ライフサイクル ---
+    void Start();
+    void Update(float deltaTime);
+    void Draw() const;
 
-    // ライフサイクル
-    virtual void Start();
-    virtual void Update(float deltaTime);
-    virtual void Draw();
+    // --- ゲッター/セッター ---
+    int GetID() const;
+
+    bool IsActive() const;
+    void SetActive(bool value);
+
+    const std::wstring& GetTag() const;
+    void SetTag(const std::wstring& tag);
 
 private:
+    // EntityのユニークID生成用
     static int s_nextID;
     int m_entityID;
+
     bool m_active = true;
     bool m_started = false;
-
-    Entity* m_parent = nullptr;
-    std::vector<std::shared_ptr<Entity>> m_children;
     std::wstring m_tag;
 
-    // 全コンポーネントを型で高速検索するためのマップ
-    std::unordered_map<std::type_index, std::shared_ptr<ComponentBase>> m_components;
+    // 全てのコンポーネントを保持するリスト（更新ループ用）
+    std::vector<std::shared_ptr<IComponent>> m_components;
 
-    // 型で事前分類されたリスト
-    std::vector<std::shared_ptr<LogicComponent>> m_logicComponents;
-    std::vector<std::shared_ptr<DrawComponent>> m_drawComponents;
-    std::vector<std::shared_ptr<UIComponent>> m_uiComponents;
+    // 高速検索用のマップ (ComponentID -> Component)
+    std::unordered_map<ComponentID, std::shared_ptr<IComponent>> m_componentMap;
 };
 
-// --- テンプレートの定義 ---
+// --- テンプレート実装 ---
+template<typename T, typename... Args>
+std::shared_ptr<T> Entity::AddComponent(Args&&... args)
+{
+    // 指定された型のコンポーネントがすでに追加されていないかチェック（任意）
+    // assert(!HasComponent<T>() && "Component type already exists.");
+
+    // 新しいコンポーネントを生成
+    // std::forwardで引数を完全に転送
+    auto newComponent = std::make_shared<T>(std::forward<Args>(args)...);
+
+    // IComponentへのポインタにキャスト
+    auto componentBase = std::static_pointer_cast<IComponent>(newComponent);
+
+    // 所有者を設定 (enable_shared_from_this を使って安全にポインタを渡す)
+    componentBase->SetOwner(shared_from_this());
+
+    // リストと高速検索用マップの両方に追加
+    m_components.push_back(componentBase);
+    m_componentMap[newComponent->GetID()] = componentBase;
+
+    // もしEntityがすでにStart済みなら、新しいコンポーネントのStartも即座に呼ぶ
+    if (m_started)
+    {
+        newComponent->Start();
+    }
+
+    return newComponent;
+}
 
 template<typename T>
 std::shared_ptr<T> Entity::GetComponent() const
 {
-    auto it = this->m_components.find(typeid(T));
-    if (it != this->m_components.end())
+    // 各コンポーネントクラスで定義された静的IDを使ってマップを検索
+    auto it = m_componentMap.find(T::ID);
+    if (it != m_componentMap.end())
     {
-        return std::dynamic_pointer_cast<T>(it->second);
+        // 見つかったら、それを派生クラスの型(T)に安全にキャストして返す
+        return std::static_pointer_cast<T>(it->second);
     }
     return nullptr;
 }
 
 template<typename T>
-void Entity::RemoveComponent()
+bool Entity::HasComponent() const
 {
-    auto it = this->m_components.find(typeid(T));
-    if (it == this->m_components.end()) return;
-
-    auto compToRemove = it->second;
-    this->m_components.erase(it);
-
-    // 各専門リストからも削除
-    if (auto logic = std::dynamic_pointer_cast<LogicComponent>(compToRemove)) {
-        std::erase(this->m_logicComponents, logic);
-    }
-    if (auto draw = std::dynamic_pointer_cast<DrawComponent>(compToRemove)) {
-        std::erase(this->m_drawComponents, draw);
-    }
-    if (auto ui = std::dynamic_pointer_cast<UIComponent>(compToRemove)) {
-        std::erase(this->m_uiComponents, ui);
-    }
+    // countを使えば、キーの存在を高速にチェックできる
+    return m_componentMap.count(T::ID) > 0;
 }

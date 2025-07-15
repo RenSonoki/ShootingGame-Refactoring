@@ -1,9 +1,18 @@
 #pragma once
-
 #include <string>
-#include "Transform2D.h" // 描画時の座標情報として利用
+#include "Transform2D.h"
+#include "Color.h"
 
-// スプライト描画に特化した、再利用可能な汎用ユーティリティクラス
+// ブレンドモードを定数として定義
+namespace BlendMode
+{
+    constexpr int None = 0;       // DX_BLENDMODE_NOBLEND
+    constexpr int Alpha = 2;      // DX_BLENDMODE_ALPHA
+    constexpr int Add = 1;        // DX_BLENDMODE_ADD
+    constexpr int Subtract = 3;   // DX_BLENDMODE_SUB
+    // 必要に応じて他のブレンドモードも追加
+}
+
 class SpriteRenderer
 {
 public:
@@ -11,17 +20,19 @@ public:
     explicit SpriteRenderer(const std::wstring& path);
     virtual ~SpriteRenderer() = default;
 
-    // 画像をロードする（ResourceManager経由）
     void Load(const std::wstring& path);
 
-    // 指定されたTransform情報に基づいて描画する
-    void Draw(const Transform2D& transform, bool visible = true) const;
+    // デフォルト引数をマジックナンバーから意味のある定数に変更
+    void Draw(
+        const Transform2D& transform,
+        bool visible = true,
+        unsigned int color = ColorUtil::White,
+        int blendMode = BlendMode::Alpha, // 定数を使用
+        int blendParam = 255
+    ) const;
 
-    // 画像の元サイズを取得
     int GetOriginalWidth() const;
     int GetOriginalHeight() const;
-
-    // DXライブラリのグラフィックハンドルを取得
     int GetHandle() const;
 
 private:
