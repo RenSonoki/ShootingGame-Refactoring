@@ -4,12 +4,13 @@
 
 #include "Game.h"
 #include "VirtualScreenManager.h"
+#include "DebugRenderer.h"
 #include "Random.h"
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
-    // ログ出力無効化
-    SetOutApplicationLogValidFlag(FALSE);
+    // ★ 修正点: デバッグのため、ログ出力を有効にする
+    SetOutApplicationLogValidFlag(TRUE);
 
     // 仮想画面サイズ
     const int VIRTUAL_WIDTH = 1280;
@@ -28,7 +29,7 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
     // 3D描画のための設定
     SetUseZBuffer3D(TRUE);
     SetWriteZBuffer3D(TRUE);
-    SetCameraNearFar(0.01f, 1000.0f);
+    SetCameraNearFar(1.0f, 10000.0f);
 
     // 描画先をバックバッファに設定
     SetDrawScreen(DX_SCREEN_BACK);
@@ -55,18 +56,30 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
         float deltaTime = (currentTime - prevTime) / 1000000.0f;
         prevTime = currentTime;
 
-        // --- 描画処理 ---
-        // 描画の開始から終了までをVirtualScreenManagerに任せる
+        // ?? --- 1. 更新 ---
+        // まず、全てのゲームロジックを更新します
+        game.Update(deltaTime);
+
+        // ?? --- 2. 描画 ---
+        // 更新が終わったら、ここから描画処理を始めます
+
+        // 仮想スクリーンへの描画開始（画面クリアもここで行われる）
         VirtualScreenManager::GetInstance().BeginDraw();
 
-        // ゲームの更新と描画
-        game.Update(deltaTime);
+        // シーンの内容を描画
         game.Draw();
 
-        // 仮想画面の内容を実画面に転送
+#if _DEBUG // デバッグビルドの時だけ実行
+        DebugRenderer::GetInstance().RenderAll();
+#endif
+
+
+        // 仮想画面の内容を実画面へ転送
         VirtualScreenManager::GetInstance().EndDraw();
 
-        // 実画面の内容をディスプレイに反映
+
+
+        // 実画面をディスプレイに反映
         ScreenFlip();
     }
 

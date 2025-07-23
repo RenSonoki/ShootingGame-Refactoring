@@ -1,98 +1,92 @@
 #include "ModelAnimatorComponent.h"
 #include "Entity.h"
-#include "RenderModelComponent.h" // 連携するためにインクルード
+#include "RenderModelComponent.h"
 #include <DxLib.h>
 #include <cassert>
 
-ModelAnimatorComponent::ModelAnimatorComponent() {}
+ModelAnimatorComponent::ModelAnimatorComponent() = default;
 
 void ModelAnimatorComponent::Start()
 {
-    // RenderModelComponentからモデルハンドルを取得
-    auto renderComponent = GetOwner()->GetComponent<RenderModelComponent>();
-    assert(renderComponent != nullptr && "ModelAnimatorComponent requires a RenderModelComponent.");
-
-    m_modelHandle = renderComponent->GetModelHandle();
-    assert(m_modelHandle != -1 && "Invalid model handle for animation.");
+    // 連携するRenderModelComponentへの参照を取得
+    m_renderComponent = GetOwner()->GetComponent<RenderModelComponent>();
+    assert(!m_renderComponent.expired() && "ModelAnimatorComponent requires a RenderModelComponent.");
 
     // アニメーション名のキャッシュを構築
-	// これにより、アニメーション名からインデックスを高速に検索できるようになる
     BuildAnimationCache();
 }
 
-// deltaTime を使って時間を進める
-void ModelAnimatorComponent::Update(float deltaTime)
+ComponentID ModelAnimatorComponent::GetID() const
 {
-    if (!m_isPlaying || m_playHandle == -1 || m_modelHandle == -1) return;
-
-    // 現在のアニメーション時間を取得
-    float currentTime = MV1GetAttachAnimTime(m_modelHandle, m_playHandle);
-
-    // 1秒あたりの再生速度 * 経過時間 で、このフレームで進むべき時間を計算
-    currentTime += m_speed * deltaTime;
-
-    // アニメーションの総時間を取得
-    float totalTime = MV1GetAttachAnimTotalTime(m_modelHandle, m_playHandle);
-
-    if (currentTime >= totalTime)
-    {
-        if (m_loop)
-        {
-            // ループ再生の場合は、総時間で割った余りを新しい時間とする
-            currentTime = fmod(currentTime, totalTime);
-        }
-        else
-        {
-            Stop();
-            // 再生終了なので、最終フレームで止める
-            MV1SetAttachAnimTime(m_modelHandle, m_playHandle, totalTime);
-            return;
-        }
-    }
-
-    MV1SetAttachAnimTime(m_modelHandle, m_playHandle, currentTime);
+    // ComponentIDにAnimatorなどを追加してください
+    return ComponentID::Animator;
 }
 
-void ModelAnimatorComponent::SetAnimation(int index, bool loop, float speed)
+void ModelAnimatorComponent::PlayAnimation(int index, bool loop, float speed)
 {
-    if (m_modelHandle == -1 || index < 0) return;
+    auto renderComp = m_renderComponent.lock();
+    if (!renderComp || index < 0 || index >= m_totalAnimNum) return;
 
-    // 既に再生中のアニメーションがあればデタッチ（付け外し）する
+    const int modelHandle = renderComp->GetModelHandle();
+    if (modelHandle == -1) return;
+
+    // 既に再生中のアニメーションがあればデタッチする
     if (m_playHandle != -1)
     {
-        MV1DetachAnim(m_modelHandle, m_playHandle);
+        MV1DetachAnim(modelHandle, m_playHandle);
     }
 
     m_currentAnimIndex = index;
-    m_loop = loop;
-    m_speed = speed;
 
-    // 新しいアニメーションをアタッチ
-    m_playHandle = MV1AttachAnim(m_modelHandle, m_currentAnimIndex, -1, FALSE); // ループは手動で制御
-    MV1SetAttachAnimTime(m_modelHandle, m_playHandle, 0.0f);
-
-    Play(); // 再生開始
+    // DXライブラリの機能でループと再生時間を設定
+    // 第3引数にループフラグを渡す
+    m_playHandle = MV1AttachAnim(modelHandle, m_currentAnimIndex, -1, loop ? TRUE : FALSE);
+    // 再生速度を設定（1.0が標準速度）
+    MV1SetAttachAnimBlendRate(modelHandle, m_playHandle, speed);
 }
 
-void ModelAnimatorComponent::SetAnimationByName(const std::wstring& name, bool loop, float speed)
+void ModelAnimatorComponent::PlayAnimationByName(const std::wstring& name, bool loop, float speed)
 {
     int index = FindAnimationIndexByName(name);
     if (index != -1)
     {
-        SetAnimation(index, loop, speed);
+        PlayAnimation(index, loop, speed);
     }
 }
 
-// キャッシュを構築するヘルパー
+void ModelAnimatorComponent::StopAnimation()
+{
+    auto renderComp = m_renderComponent.lock();
+    if (!renderComp || m_playHandle == -1) return;
+
+    const int modelHandle = renderComp->GetModelHandle();
+    if (modelHandle != -1)
+    {
+        MV1DetachAnim(modelHandle, m_playHandle);
+    }
+    m_playHandle = -1;
+    m_currentAnimIndex = -1;
+}
+
+bool ModelAnimatorComponent::IsPlaying() const
+{
+    // 再生ハンドルが有効かどうかで再生状態を判断
+    return m_playHandle != -1;
+}
+
 void ModelAnimatorComponent::BuildAnimationCache()
 {
-    if (m_modelHandle == -1) return;
+    auto renderComp = m_renderComponent.lock();
+    if (!renderComp) return;
+
+    const int modelHandle = renderComp->GetModelHandle();
+    if (modelHandle == -1) return;
 
     m_animNameToIndex.clear();
-    int animCount = MV1GetAnimNum(m_modelHandle);
-    for (int i = 0; i < animCount; ++i)
+    m_totalAnimNum = MV1GetAnimNum(modelHandle);
+    for (int i = 0; i < m_totalAnimNum; ++i)
     {
-        const wchar_t* animName = MV1GetAnimName(m_modelHandle, i);
+        const wchar_t* animName = MV1GetAnimName(modelHandle, i);
         if (animName)
         {
             m_animNameToIndex[animName] = i;
@@ -100,17 +94,8 @@ void ModelAnimatorComponent::BuildAnimationCache()
     }
 }
 
-// キャッシュを使って高速検索
-int ModelAnimatorComponent::FindAnimationIndexByName(const std::wstring& name)
+int ModelAnimatorComponent::FindAnimationIndexByName(const std::wstring& name) const
 {
     auto it = m_animNameToIndex.find(name);
-    if (it != m_animNameToIndex.end())
-    {
-        return it->second; // 見つかった
-    }
-    return -1; // 見つからなかった
+    return (it != m_animNameToIndex.end()) ? it->second : -1;
 }
-
-void ModelAnimatorComponent::Play() { m_isPlaying = true; }
-void ModelAnimatorComponent::Stop() { m_isPlaying = false; }
-bool ModelAnimatorComponent::IsPlaying() const { return m_isPlaying; }

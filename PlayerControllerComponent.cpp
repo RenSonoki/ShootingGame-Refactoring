@@ -1,73 +1,90 @@
 #include "PlayerControllerComponent.h"
 #include "Entity.h"
-#include "TransformComponent.h" // Quaternionを使うように修正済みのものをインクルード
-#include "CameraComponent.h"    // CameraComponentの定義が必要
-#include "Quaternion.h"         // 私たちが作成したQuaternion.hをインクルード
-#include "DxLib.h"
+#include "TransformComponent.h"
+#include "CameraComponent.h"
+#include "ModelAnimatorComponent.h"
+#include "BulletShooterComponent.h"
+#include "DebugRenderer.h" // デバッグ描画用のヘッダーファイルをインクルード
+#include "PlayerState.h" // 状態クラスの実装をインクルード
 #include <cassert>
-#include <cmath>
 
-PlayerControllerComponent::PlayerControllerComponent() = default;
+PlayerControllerComponent::PlayerControllerComponent()
+    : m_moveSpeed(5.0f)
+    , m_rotationSpeed(15.0f)
+    , m_currentState(nullptr)
+{
+}
+
+// ★ 修正点: デストラクタの「定義」をここに移動する
+// この場所では IPlayerState が完全な型なので、m_currentState は安全に破棄できる
+PlayerControllerComponent::~PlayerControllerComponent() = default;
 
 void PlayerControllerComponent::Start()
 {
+    // 自身がアタッチされているエンティティから、連携するコンポーネントを取得してキャッシュ
     m_transform = GetOwner()->GetComponent<TransformComponent>();
+    m_animator = GetOwner()->GetComponent<ModelAnimatorComponent>();
+    m_shooter = GetOwner()->GetComponent<BulletShooterComponent>();
+
+    // 連携するコンポーネントが設定されているか、デバッグ時にチェック
     assert(!m_transform.expired() && "PlayerControllerComponent requires a TransformComponent.");
+    assert(!m_animator.expired() && "PlayerControllerComponent requires a ModelAnimatorComponent.");
+    assert(!m_shooter.expired() && "PlayerControllerComponent requires a BulletShooterComponent.");
+
+    // 最初の状態を「待機状態」に設定して開始
+    ChangeState(std::make_unique<PlayerIdleState>());
 }
 
-void PlayerControllerComponent::SetCamera(std::shared_ptr<CameraComponent> camera)
+void PlayerControllerComponent::Update(float deltaTime)
+{
+    // Updateの責務は、現在の状態オブジェクトのUpdateを呼び出すことだけ
+    if (m_currentState)
+    {
+        m_currentState->Update(this, deltaTime);
+    }
+
+#if _DEBUG
+    // ★ プレイヤーの位置に緑の球を描画
+    if (auto tr = GetTransform()) {
+        DebugRenderer::GetInstance().AddSphere(tr->GetPosition(), 1.5f, GetColor(0, 255, 0));
+    }
+#endif
+}
+
+ComponentID PlayerControllerComponent::GetID() const
+{
+    // ComponentIDにPlayerControllerなどを追加してください
+    return ComponentID::PlayerController;
+}
+
+void PlayerControllerComponent::ChangeState(std::unique_ptr<IPlayerState> newState)
+{
+    // 現在の状態があれば、その終了処理を呼び出す
+    if (m_currentState)
+    {
+        m_currentState->OnExit(this);
+    }
+
+    // 新しい状態に切り替える
+    m_currentState = std::move(newState);
+
+    // 新しい状態の開始処理を呼び出す
+    if (m_currentState)
+    {
+        m_currentState->OnEnter(this);
+    }
+}
+
+void PlayerControllerComponent::SetCamera(std::weak_ptr<CameraComponent> camera)
 {
     m_camera = camera;
 }
 
-void PlayerControllerComponent::SetMoveSpeed(float speed) { m_moveSpeed = speed; }
-void PlayerControllerComponent::SetRotationSpeed(float speed) { m_rotationSpeed = speed; }
-
-void PlayerControllerComponent::Update(float deltaTime)
-{
-    auto transform = m_transform.lock();
-    auto camera = m_camera.lock();
-    if (!transform || !camera) return;
-
-    // --- 1. 入力受付 ---
-    VECTOR inputVec = VGet(0, 0, 0);
-    if (CheckHitKey(KEY_INPUT_W)) { inputVec.z += 1.0f; }
-    if (CheckHitKey(KEY_INPUT_S)) { inputVec.z -= 1.0f; }
-    if (CheckHitKey(KEY_INPUT_A)) { inputVec.x -= 1.0f; }
-    if (CheckHitKey(KEY_INPUT_D)) { inputVec.x += 1.0f; }
-
-    // --- 2. 移動方向の計算 ---
-    if (VSquareSize(inputVec) < 1e-6f)
-    {
-        transform->SetVelocity(VGet(0, 0, 0)); // 入力がなければ停止
-        return;
-    }
-
-    auto cameraTransform = camera->GetOwner()->GetComponent<TransformComponent>();
-    if (!cameraTransform) return;
-
-    VECTOR cameraForward = cameraTransform->GetForward();
-    VECTOR cameraRight = cameraTransform->GetRight();
-    cameraForward.y = 0.0f;
-    cameraRight.y = 0.0f;
-    cameraForward = VNorm(cameraForward);
-    cameraRight = VNorm(cameraRight);
-
-    VECTOR moveDir = VAdd(VScale(cameraRight, inputVec.x), VScale(cameraForward, inputVec.z));
-    moveDir = VNorm(moveDir);
-
-    // --- 3. 速度の設定 ---
-    VECTOR velocity = VScale(moveDir, m_moveSpeed);
-    transform->SetVelocity(velocity);
-
-    // --- 4. 旋回処理 ---
-    // 【修正点】自作のQuaternionクラスを使用
-    Quaternion currentRot = transform->GetRotation();
-
-    float targetAngle = atan2f(moveDir.x, moveDir.z);
-    Quaternion targetRot = Quaternion::FromEulerAngles(0.0f, targetAngle, 0.0f);
-
-    Quaternion newRot = Quaternion::Slerp(currentRot, targetRot, deltaTime * m_rotationSpeed);
-
-    transform->SetRotation(newRot);
-}
+// --- ゲッターの実装 ---
+// Stateクラスがオーナーの情報を安全に取得するために使います
+TransformComponent* PlayerControllerComponent::GetTransform() const { return m_transform.lock().get(); }
+CameraComponent* PlayerControllerComponent::GetCamera() const { return m_camera.lock().get(); }
+ModelAnimatorComponent* PlayerControllerComponent::GetAnimator() const { return m_animator.lock().get(); }
+BulletShooterComponent* PlayerControllerComponent::GetShooter() const { return m_shooter.lock().get(); }
+float PlayerControllerComponent::GetMoveSpeed() const { return m_moveSpeed; }
+float PlayerControllerComponent::GetRotationSpeed() const { return m_rotationSpeed; }
