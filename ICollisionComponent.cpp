@@ -7,7 +7,7 @@ ICollisionComponent::~ICollisionComponent()
     // コンポーネントが破棄される際にColliderManagerから登録を解除する
     if (auto sharedThis = std::enable_shared_from_this<ICollisionComponent>::shared_from_this())
     {
-        ColliderManager::Instance().Unregister(sharedThis);
+        ColliderManager::GetInstance().Unregister(sharedThis);
     }
 }
 
@@ -33,6 +33,6 @@ void ICollisionComponent::SetOwner(std::weak_ptr<Entity> owner)
     // EntityのAddComponentがshared_ptrでComponentを生成していることが前提
     if (auto sharedThis = std::enable_shared_from_this<ICollisionComponent>::shared_from_this())
     {
-        ColliderManager::Instance().Register(sharedThis);
+        ColliderManager::GetInstance().Register(sharedThis);
     }
 }

@@ -1,4 +1,4 @@
-#pragma once// C³Ï‚İ
+#pragma once//
 
 #include <memory>
 #include <string>

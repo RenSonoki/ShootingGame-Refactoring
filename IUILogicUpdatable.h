@@ -5,5 +5,5 @@ class IUILogicUpdatable
 {
 public:
     virtual ~IUILogicUpdatable() = default;
-    virtual void UpdateLogic() = 0;
+    virtual void UpdateLogic(float deltaTime) = 0;
 };

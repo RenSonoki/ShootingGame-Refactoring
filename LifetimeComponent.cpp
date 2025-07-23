@@ -1,16 +1,23 @@
 #include "LifetimeComponent.h"
-#include "Entity.h"
-#include "ColliderManager.h" // Entityをシーンから削除する場合に必要になるかも
+#include "Entity.h" // GetOwner()やSetActive()のために必要
 
-LifetimeComponent::LifetimeComponent(float lifetimeInSeconds)
+LifetimeComponent::LifetimeComponent()
+    : m_lifetime(-1.0f) // デフォルトは永続（負の値）
+    , m_expired(false)
+    , m_onExpiredCallback(nullptr)
 {
-    SetLifetime(lifetimeInSeconds);
+}
+
+ComponentID LifetimeComponent::GetID() const
+{
+    return ComponentID::Life;
 }
 
 void LifetimeComponent::SetLifetime(float lifetimeInSeconds)
 {
     m_lifetime = lifetimeInSeconds;
-    m_expired = false;
+    // 新しく寿命が設定されたら、失効フラグをリセット
+    m_expired = (m_lifetime == 0.0f);
 }
 
 bool LifetimeComponent::IsExpired() const
@@ -18,24 +25,32 @@ bool LifetimeComponent::IsExpired() const
     return m_expired;
 }
 
+
 void LifetimeComponent::Update(float deltaTime)
 {
-    if (m_expired || m_lifetime < 0.0f) return; // 永続（負の値）の場合は何もしない
+    // 既に寿命が尽きている、または永続（負の値）の場合は何もしない
+    if (m_expired || m_lifetime < 0.0f)
+    {
+        return;
+    }
 
     m_lifetime -= deltaTime;
+
+    // 寿命が尽きた瞬間の処理
     if (m_lifetime <= 0.0f)
     {
         m_expired = true;
 
-        // コールバックが設定されていれば、それを呼び出す
+        // カスタムのコールバックが設定されていれば、それを呼び出す
         if (m_onExpiredCallback)
         {
             m_onExpiredCallback();
         }
         else
         {
-            // デフォルトの動作：オーナーを非アクティブにする
-            if (Entity* owner = GetOwner())
+            // コールバックが未設定の場合のデフォルト動作：オーナーを非アクティブにする
+            // GetOwner()はshared_ptrを返すので、nullptrチェックが安全
+            if (auto owner = GetOwner())
             {
                 owner->SetActive(false);
             }

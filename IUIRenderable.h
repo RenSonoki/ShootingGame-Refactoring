@@ -5,5 +5,5 @@ class IUIRenderable
 {
 public:
     virtual ~IUIRenderable() = default;
-    virtual void Draw() = 0; // 引数は不要。Rendererに任せるため。
+    virtual void Draw() const = 0; // const に統一
 };
