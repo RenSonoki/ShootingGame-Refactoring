@@ -4,9 +4,14 @@
 #include <algorithm>
 #include <cassert>
 
-SphereCollisionComponent::SphereCollisionComponent(float radius)
-    : m_baseRadius(radius)
+SphereCollisionComponent::SphereCollisionComponent()
+    : m_radius(1.0f) // デフォルトの半径を1.0に設定
 {
+}
+
+ComponentID SphereCollisionComponent::GetID() const
+{
+    return ComponentID::Sphere;
 }
 
 void SphereCollisionComponent::Start()
@@ -40,12 +45,12 @@ float SphereCollisionComponent::GetRadius() const
     {
         VECTOR scale = transform->GetScale();
         float maxScale = (std::max)({ scale.x, scale.y, scale.z }); // C++11以降の書き方
-        return m_baseRadius * maxScale;
+        return m_radius * maxScale;
     }
-    return m_baseRadius;
+    return m_radius;
 }
 
-void SphereCollisionComponent::SetBaseRadius(float radius)
+void SphereCollisionComponent::SetRadius(float radius)
 {
-    m_baseRadius = radius;
+    m_radius = radius;
 }

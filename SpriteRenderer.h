@@ -3,40 +3,54 @@
 #include "Transform2D.h"
 #include "Color.h"
 
-// ブレンドモードを定数として定義
 namespace BlendMode
 {
-    constexpr int None = 0;       // DX_BLENDMODE_NOBLEND
-    constexpr int Alpha = 2;      // DX_BLENDMODE_ALPHA
-    constexpr int Add = 1;        // DX_BLENDMODE_ADD
-    constexpr int Subtract = 3;   // DX_BLENDMODE_SUB
-    // 必要に応じて他のブレンドモードも追加
+    constexpr int None = 0;
+    constexpr int Alpha = 2;
+    constexpr int Add = 1;
+    constexpr int Subtract = 3;
 }
 
+/**
+ * @class SpriteRenderer
+ * @brief 一枚のスプライト画像の描画に必要なデータとロジックをカプセル化するクラス
+ */
 class SpriteRenderer
 {
 public:
-    SpriteRenderer() = default;
+    SpriteRenderer();
     explicit SpriteRenderer(const std::wstring& path);
-    virtual ~SpriteRenderer() = default;
+    ~SpriteRenderer();
 
-    void Load(const std::wstring& path);
+    // コピーは禁止し、ムーブ（所有権の移動）を許可する
+    SpriteRenderer(const SpriteRenderer&) = delete;
+    SpriteRenderer& operator=(const SpriteRenderer&) = delete;
+    SpriteRenderer(SpriteRenderer&& other) noexcept;
+    SpriteRenderer& operator=(SpriteRenderer&& other) noexcept;
 
-    // デフォルト引数をマジックナンバーから意味のある定数に変更
-    void Draw(
-        const Transform2D& transform,
-        bool visible = true,
-        unsigned int color = ColorUtil::White,
-        int blendMode = BlendMode::Alpha, // 定数を使用
-        int blendParam = 255
-    ) const;
+    bool Load(const std::wstring& path);
 
+    // 描画メソッド（引数はTransformのみでシンプルに）
+    void Draw(const Transform2D& transform) const;
+
+    // --- 描画パラメータを設定するセッター ---
+    void SetVisible(bool visible);
+    void SetColor(unsigned int color);
+    void SetBlendParam(int blendParam); // ブレンドの強さを設定
+
+    // --- ゲッター ---
     int GetOriginalWidth() const;
     int GetOriginalHeight() const;
     int GetHandle() const;
 
 private:
-    int m_handle = -1;
-    int m_originalWidth = 0;
-    int m_originalHeight = 0;
+    void Release(); // 解放処理をまとめるヘルパー
+
+    int m_handle;
+    int m_originalWidth;
+    int m_originalHeight;
+
+    bool m_visible;
+    unsigned int m_color;
+    int m_blendParam; // ブレンドの強さ(0-255)
 };

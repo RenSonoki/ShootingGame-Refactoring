@@ -16,6 +16,44 @@ struct Quaternion
     // 単位クォータニオン（無回転）を返す
     static Quaternion Identity() { return Quaternion(0, 0, 0, 1); }
 
+    // 新しく追加：回転行列からクォータニオンを生成する静的メソッド
+    static Quaternion FromMatrix(const MATRIX& m)
+    {
+        Quaternion q;
+        float trace = m.m[0][0] + m.m[1][1] + m.m[2][2];
+        if (trace > 0.0f) {
+            float s = 0.5f / sqrtf(trace + 1.0f);
+            q.w = 0.25f / s;
+            q.x = (m.m[2][1] - m.m[1][2]) * s;
+            q.y = (m.m[0][2] - m.m[2][0]) * s;
+            q.z = (m.m[1][0] - m.m[0][1]) * s;
+        }
+        else {
+            if (m.m[0][0] > m.m[1][1] && m.m[0][0] > m.m[2][2]) {
+                float s = 2.0f * sqrtf(1.0f + m.m[0][0] - m.m[1][1] - m.m[2][2]);
+                q.w = (m.m[2][1] - m.m[1][2]) / s;
+                q.x = 0.25f * s;
+                q.y = (m.m[0][1] + m.m[1][0]) / s;
+                q.z = (m.m[0][2] + m.m[2][0]) / s;
+            }
+            else if (m.m[1][1] > m.m[2][2]) {
+                float s = 2.0f * sqrtf(1.0f + m.m[1][1] - m.m[0][0] - m.m[2][2]);
+                q.w = (m.m[0][2] - m.m[2][0]) / s;
+                q.x = (m.m[0][1] + m.m[1][0]) / s;
+                q.y = 0.25f * s;
+                q.z = (m.m[1][2] + m.m[2][1]) / s;
+            }
+            else {
+                float s = 2.0f * sqrtf(1.0f + m.m[2][2] - m.m[0][0] - m.m[1][1]);
+                q.w = (m.m[1][0] - m.m[0][1]) / s;
+                q.x = (m.m[0][2] + m.m[2][0]) / s;
+                q.y = (m.m[1][2] + m.m[2][1]) / s;
+                q.z = 0.25f * s;
+            }
+        }
+        return q;
+    }
+
     // オイラー角（ラジアン）からクォータニオンを生成
     static Quaternion FromEulerAngles(float pitch, float yaw, float roll)
     {

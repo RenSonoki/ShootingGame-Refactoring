@@ -8,8 +8,10 @@ class TransformComponent;
 class SphereCollisionComponent : public ICollisionComponent
 {
 public:
-    explicit SphereCollisionComponent(float radius);
+    SphereCollisionComponent();
     virtual ~SphereCollisionComponent() = default;
+
+    ComponentID GetID() const override;
 
     // --- ComponentBaseのライフサイクルメソッド ---
     void Start() override;
@@ -22,10 +24,10 @@ public:
 
     // --- このクラス固有の機能 ---
     float GetRadius() const;
-    void SetBaseRadius(float radius);
+    void SetRadius(float radius);
 
 private:
-    float m_baseRadius;
+    float m_radius;
     // TransformComponentへのポインタはweak_ptrにすると、より安全です
     std::weak_ptr<TransformComponent> m_transform;
 };

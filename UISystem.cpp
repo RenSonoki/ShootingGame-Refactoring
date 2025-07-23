@@ -1,114 +1,95 @@
 #include "UISystem.h"
-#include "Entity.h"
-#include "UIComponent.h"
-#include "IUILogicUpdatable.h"
-#include "IUIInteractable.h"
-#include "DxLib.h"
+#include "UIElement.h"
+#include "UIPanel.h" // CollectRenderablesで使うため
+#include <algorithm>
+#include <DxLib.h>
 
-void UISystem::RegisterEntity(const std::shared_ptr<Entity>& entity)
+// コンストラクタとデストラクタをここで定義
+UISystem::UISystem() = default;
+UISystem::~UISystem() = default;
+
+void UISystem::AddElement(std::unique_ptr<UIElement> element)
 {
-    if (entity && entity->GetComponent<UIComponent>())
+    if (element)
     {
-        m_entities.push_back(entity);
-        m_isDirty = true; // リストが変更されたので、ダーティフラグを立てる
+        m_rootElements.push_back(std::move(element));
     }
 }
 
-void UISystem::UnregisterEntity(const std::shared_ptr<Entity>& entity)
+void UISystem::Update(float deltaTime)
 {
-    if (!entity) return;
-    std::erase_if(m_entities, [&](const std::weak_ptr<Entity>& wp)
+    for (const auto& element : m_rootElements)
+    {
+        if (element && element->IsVisible())
         {
-        return wp.expired() || wp.lock() == entity;
+            element->UpdateLogic(deltaTime);
+            element->UpdateInteraction();
+        }
+    }
+}
+
+void UISystem::Draw() const
+{
+    // 1. 描画対象をリストに集める (変更なし)
+    std::vector<UIElement*> renderList;
+    renderList.reserve(m_rootElements.size() * 2); // 事前に多めに確保
+    for (const auto& element : m_rootElements)
+    {
+        if (element && element->IsVisible())
+        {
+            CollectRenderables(element.get(), renderList);
+        }
+    }
+    // 2. Zオーダーでソート (変更なし)
+    std::sort(renderList.begin(), renderList.end(),
+        [](const UIElement* a, const UIElement* b) {
+            return a->GetZOrder() < b->GetZOrder();
         });
-    m_isDirty = true;
-}
 
-void UISystem::Update()
-{
-    // リストに変更があれば、コンポーネントのキャッシュを更新
-    if (m_isDirty)
+    // ★★★ ここが唯一の描画設定の管理場所 ★★★
+
+    // 3. UI描画の開始前に、描画設定をリセット＆設定
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, 255);
+    SetUseZBufferFlag(FALSE);
+    SetWriteZBufferFlag(FALSE);
+
+    // 4. ソートされた順序で、全UIを描画
+    for (const auto* element : renderList)
     {
-        RefreshComponents();
+        element->Draw();
     }
 
-    // キャッシュされたコンポーネントのロジックを更新
-    for (const auto& comp : m_cachedComponents)
-    {
-        if (comp && comp->IsActive() && comp->IsVisible())
-        {
-            if (auto updatable = std::dynamic_pointer_cast<IUILogicUpdatable>(comp))
-            {
-                updatable->UpdateLogic();
-            }
-            if (auto interactable = std::dynamic_pointer_cast<IUIInteractable>(comp))
-            {
-                interactable->UpdateInteraction();
-            }
-        }
-    }
-}
-
-void UISystem::Draw(int targetScreen)
-{
-    // リストに変更があれば、キャッシュの更新とソートを行う
-    if (m_isDirty)
-    {
-        RefreshComponents();
-    }
-
-    // ソート済みのキャッシュを描画
-    for (const auto& comp : m_cachedComponents)
-    {
-        if (comp && comp->IsActive() && comp->IsVisible())
-        {
-            comp->Draw(targetScreen);
-        }
-    }
+    // 5. UI描画の終了後に、描画設定をデフォルトに戻す
+    SetDrawBlendMode(DX_BLENDMODE_NOBLEND, 255);
+    SetUseZBufferFlag(TRUE);
+    SetWriteZBufferFlag(TRUE);
 }
 
 void UISystem::Clear()
 {
-    m_entities.clear();
-    m_cachedComponents.clear();
-    m_isDirty = true;
+    m_rootElements.clear();
 }
 
 void UISystem::SetLayerDepth(int depth) { m_layerDepth = depth; }
 int UISystem::GetLayerDepth() const { return m_layerDepth; }
 
-void UISystem::RefreshComponents()
+// private
+void UISystem::CollectRenderables(UIElement* element, std::vector<UIElement*>& renderList) const
 {
-    m_cachedComponents.clear();
+    if (!element || !element->IsVisible()) return;
 
-    // 無効なエンティティをリストから除去しつつ、UIComponentを収集
-    m_entities.erase(std::remove_if(m_entities.begin(), m_entities.end(),
-        [this](const std::weak_ptr<Entity>& wp)
+    // 描画機能を持つ要素（Rendererがセットされているなど）のみをリストに追加
+    if (element->HasRenderer())
+    {
+        renderList.push_back(element);
+    }
+
+    // もし要素がパネルなら、その子要素も再帰的に収集
+    if (auto panel = dynamic_cast<UIPanel*>(element))
+    {
+        for (const auto& child : panel->GetChildren())
         {
-            if (wp.expired()) {
-                return true; // 期限切れのポインタは除去
-            }
-            auto entity = wp.lock();
-            // エンティティからUIComponentを取得してキャッシュに追加
-            // ※1エンティティ1UIComponentを前提とする簡易実装
-            if (auto uiComp = entity->GetComponent<UIComponent>())
-            {
-                m_cachedComponents.push_back(uiComp);
-            }
-            return false;
-        }), m_entities.end());
-
-    SortComponents();
-    m_isDirty = false;
-}
-
-void UISystem::SortComponents()
-{
-    std::sort(m_cachedComponents.begin(), m_cachedComponents.end(),
-        [](const std::shared_ptr<UIComponent>& a, const std::shared_ptr<UIComponent>& b)
-        {
-            if (!a) return false;
-            if (!b) return true;
-            return a->GetZOrder() < b->GetZOrder();
-        });
+            CollectRenderables(child.get(), renderList);
+        }
+    }
 }

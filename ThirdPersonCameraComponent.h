@@ -1,36 +1,38 @@
 #pragma once
-
-#include "LogicComponent.h"
+#include "ComponentBase.h"
 #include <memory>
-#include <DxLib.h>
+#include "DxLib.h" // VECTORのため
 
 // 前方宣言
 class TransformComponent;
 class CameraComponent;
+struct Quaternion; // ★ Quaternionを前方宣言
 
-// ターゲットを追従する三人称視点カメラのロジック
-// NOTE: このクラスは、カメラの位置をターゲットのTransformComponentに基づいて更新します。
-class ThirdPersonCameraComponent : public LogicComponent
+class ThirdPersonCameraComponent : public ComponentBase
 {
 public:
-    // 追従対象のTransformComponentを弱いポインタで受け取る
-    // NOTE: 循環参照をさけるため
-    explicit ThirdPersonCameraComponent(std::weak_ptr<TransformComponent> targetTransform);
+    ThirdPersonCameraComponent();
+    virtual ~ThirdPersonCameraComponent() = default;
 
-    // ライフサイクルメソッド
     void Start() override;
     void Update(float deltaTime) override;
+    ComponentID GetID() const override;
 
-    // カメラの距離や高さを設定するセッター
+    // 追従するターゲット（プレイヤー）と、その設定
+    void SetTarget(std::weak_ptr<TransformComponent> target);
+    void SetDistance(float distance);
     void SetOffset(const VECTOR& offset);
 
 private:
-    // 依存コンポーネントへのポインタ
-    std::shared_ptr<CameraComponent> m_camera;
+    std::weak_ptr<TransformComponent> m_transform;
+    std::weak_ptr<CameraComponent> m_camera;
+    std::weak_ptr<TransformComponent> m_target;
 
-    // 追従対象へのポインタ
-    std::weak_ptr<TransformComponent> m_targetTransform;
+    float m_idealDistance;
+    VECTOR m_targetOffset;
+    float m_rotationSpeed;
+    float m_lerpSpeed;
 
-    // ターゲットからの相対的なカメラの位置
-    VECTOR m_offset;
+    float m_yaw;
+    float m_pitch;
 };

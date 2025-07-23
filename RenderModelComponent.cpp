@@ -1,36 +1,51 @@
 #include "RenderModelComponent.h"
-#include "ResourceManager.h"
-#include "Entity.h" // GetOwner() と GetComponent() のために必要
+#include "Entity.h"
 #include "TransformComponent.h"
 #include <DxLib.h>
 #include <cassert>
 
-
-RenderModelComponent::RenderModelComponent(const std::wstring& modelPath)
+// ★ 修正点: デフォルトコンストラクタの実装
+RenderModelComponent::RenderModelComponent()
+    : m_modelPath(L"")
+    , m_modelHandle(-1)
 {
-    m_modelPath = modelPath;
+}
+
+// ★ 修正点: デストラクタでモデルを解放し、メモリリークを防ぐ
+RenderModelComponent::~RenderModelComponent()
+{
+    if (m_modelHandle != -1)
+    {
+        MV1DeleteModel(m_modelHandle);
+        m_modelHandle = -1;
+    }
 }
 
 void RenderModelComponent::Start()
 {
-    // ResourceManager経由でのモデル読み込みをStartに移動
-    if (!m_modelPath.empty())
-    {
-        // 汎用版ResourceManagerを想定
-        m_modelHandle = ResourceManager::Instance().Get<ModelTag>(m_modelPath);
-    }
-
-    // オーナーエンティティから、依存するTransformComponentを取得してキャッシュする
+    // Startの責務は、他のコンポーネントへの参照を解決すること
     m_transform = GetOwner()->GetComponent<TransformComponent>();
-
-    // 依存コンポーネントが見つからない場合はエラーを出す（デバッグ時に気づきやすいように）
-    assert(m_transform != nullptr && "RenderModelComponent requires a TransformComponent on the same Entity.");
+    assert(!m_transform.expired() && "RenderModelComponent requires a TransformComponent.");
 }
 
-void RenderModelComponent::SetModel(const std::wstring& modelPath)
+ComponentID RenderModelComponent::GetID() const
 {
+    return ComponentID::ModelRenderer;
+}
+
+bool RenderModelComponent::SetModel(const std::wstring& modelPath)
+{
+    // 既に別のモデルを読み込んでいれば、先に解放する
+    if (m_modelHandle != -1)
+    {
+        MV1DeleteModel(m_modelHandle);
+    }
+
     m_modelPath = modelPath;
-    m_modelHandle = ResourceManager::Instance().Get<ModelTag>(m_modelPath);
+    // DxLibの機能でモデルを読み込み、ハンドルを保持
+    m_modelHandle = MV1LoadModel(modelPath.c_str());
+
+    return m_modelHandle != -1;
 }
 
 int RenderModelComponent::GetModelHandle() const
@@ -38,25 +53,16 @@ int RenderModelComponent::GetModelHandle() const
     return m_modelHandle;
 }
 
-void RenderModelComponent::Draw()
+void RenderModelComponent::Draw() const
 {
-    if (m_modelHandle == -1 || !m_transform) return;
+    auto transform = m_transform.lock();
+    if (m_modelHandle == -1 || !transform)
+    {
+        return;
+    }
 
-    // DXライブラリの行列関数を使って、より正確な位置、回転、拡縮を反映させる
-    MATRIX mat_scale, mat_rot, mat_trans, mat_world;
-
-    // 拡縮、回転、平行移動の行列をそれぞれ作成
-    mat_scale = MGetIdent(); // 今は拡縮は等倍
-    mat_rot = MGetRotY(m_transform->GetRotation().y); // Y軸回転のみを例として
-    mat_trans = MGetTranslate(m_transform->GetPosition());
-
-    // ワールド行列を合成 (拡縮 -> 回転 -> 平行移動の順が一般的)
-    mat_world = MMult(mat_scale, mat_rot);
-    mat_world = MMult(mat_world, mat_trans);
-
-    // ワールド行列をモデルに設定
-    MV1SetMatrix(m_modelHandle, mat_world);
-
-    // モデルを描画
+    // ワールド行列の計算はTransformComponentに完全に任せる
+    MATRIX worldMat = transform->GetWorldMatrix();
+    MV1SetMatrix(m_modelHandle, worldMat);
     MV1DrawModel(m_modelHandle);
 }

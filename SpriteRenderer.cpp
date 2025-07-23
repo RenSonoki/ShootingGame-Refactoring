@@ -1,73 +1,71 @@
 #include "SpriteRenderer.h"
-#include "ResourceManager.h" // 各自のヘッダーパスに調整
+#include "ResourceManager.h"
 #include "ResourceTraits.h"
+#include <utility>
 #include <DxLib.h>
-
-// -------------------------------------------------------------------
-// RAIIを活用して描画設定を管理するヘルパークラス
-// 「設定を変更し、処理を行い、設定を元に戻す」という考え方
-// このクラスのオブジェクトが生存している間だけ描画設定が変更される
-// -------------------------------------------------------------------
-class ScopedDrawSettings
-{
-public:
-    // コンストラクタで新しい設定を適用
-    ScopedDrawSettings(unsigned int color, int blendMode, int blendParam)
-    {
-        // DXライブラリの描画設定を変更
-        SetDrawBright(ColorUtil::GetR(color), ColorUtil::GetG(color), ColorUtil::GetB(color));
-        SetDrawBlendMode(blendMode, blendParam);
-    }
-
-    // デストラクタで自動的にデフォルト設定に戻す
-    ~ScopedDrawSettings()
-    {
-        SetDrawBright(255, 255, 255);
-        SetDrawBlendMode(BlendMode::None, 255);
-    }
-
-    // このクラスはリソース管理専用なので、コピーとムーブを禁止する
-    ScopedDrawSettings(const ScopedDrawSettings&) = delete;
-    ScopedDrawSettings& operator=(const ScopedDrawSettings&) = delete;
-};
-
 
 // --- SpriteRendererの実装 ---
 
-SpriteRenderer::SpriteRenderer(const std::wstring& path)
+SpriteRenderer::SpriteRenderer()
+    : m_handle(-1), m_originalWidth(0), m_originalHeight(0),
+    m_visible(true), m_color(ColorUtil::White), m_blendParam(255)
 {
-    if (!path.empty())
-    {
-        Load(path);
-    }
 }
 
-void SpriteRenderer::Load(const std::wstring& path)
+SpriteRenderer::SpriteRenderer(const std::wstring& path) : SpriteRenderer() { Load(path); }
+SpriteRenderer::~SpriteRenderer() { Release(); }
+
+// ムーブコンストラクタ
+SpriteRenderer::SpriteRenderer(SpriteRenderer&& other) noexcept
+    : m_handle(other.m_handle), m_originalWidth(other.m_originalWidth), m_originalHeight(other.m_originalHeight),
+    m_visible(other.m_visible), m_color(other.m_color), m_blendParam(other.m_blendParam)
 {
+    other.m_handle = -1; // 所有権をムーブしたので、相手は無効化
+}
+
+// ムーブ代入演算子
+SpriteRenderer& SpriteRenderer::operator=(SpriteRenderer&& other) noexcept
+{
+    if (this != &other)
+    {
+        Release();
+        m_handle = other.m_handle;
+        m_originalWidth = other.m_originalWidth;
+        m_originalHeight = other.m_originalHeight;
+        m_visible = other.m_visible;
+        m_color = other.m_color;
+        m_blendParam = other.m_blendParam;
+
+        other.m_handle = -1;
+    }
+    return *this;
+}
+
+
+bool SpriteRenderer::Load(const std::wstring& path)
+{
+    Release();
     m_handle = ResourceManager::Instance().Get<ImageTag>(path);
     if (m_handle != -1)
     {
         GetGraphSize(m_handle, &m_originalWidth, &m_originalHeight);
+        return true;
     }
-    else
-    {
-        m_originalWidth = 0;
-        m_originalHeight = 0;
-    }
+    return false;
 }
 
-void SpriteRenderer::Draw(const Transform2D& transform, bool visible, unsigned int color, int blendMode, int blendParam) const
+void SpriteRenderer::Draw(const Transform2D& transform) const
 {
-    if (!visible || m_handle == -1)
-    {
-        return;
-    }
+    if (!m_visible || m_handle == -1) return;
 
-    // RAIIクラスのオブジェクトをスタックに生成
-    // この関数のスコープを抜けるときに、デストラクタが呼ばれ、設定が自動で元に戻る
-    const ScopedDrawSettings settings(color, blendMode, blendParam);
+    // ★ 描画設定は行わない！ UISystemに一任する
 
-    // --- 描画処理本体 ---
+    // 色の変更だけは個別に行う
+    SetDrawBright(ColorUtil::GetR(m_color), ColorUtil::GetG(m_color), ColorUtil::GetB(m_color));
+
+    // ブレンドの強さを設定
+    SetDrawBlendMode(DX_BLENDMODE_ALPHA, m_blendParam);
+
     const VECTOR2 pos = transform.GetPosition();
     const VECTOR2 scale = transform.GetScale();
     const float rotation = transform.GetRotation();
@@ -83,11 +81,28 @@ void SpriteRenderer::Draw(const Transform2D& transform, bool visible, unsigned i
         scale.y,
         static_cast<double>(rotation),
         m_handle,
-        TRUE
+        TRUE, // 透明有効
+        FALSE
     );
-    // ここで settings オブジェクトが破棄され、デストラクタが呼ばれる
+
+    // 描画後に色を白に戻す
+    SetDrawBright(255, 255, 255);
 }
 
+// --- セッターとゲッターの実装 ---
+void SpriteRenderer::SetVisible(bool visible) { m_visible = visible; }
+void SpriteRenderer::SetColor(unsigned int color) { m_color = color; }
+void SpriteRenderer::SetBlendParam(int blendParam) { m_blendParam = blendParam; }
 int SpriteRenderer::GetOriginalWidth() const { return m_originalWidth; }
 int SpriteRenderer::GetOriginalHeight() const { return m_originalHeight; }
 int SpriteRenderer::GetHandle() const { return m_handle; }
+
+void SpriteRenderer::Release()
+{
+    if (m_handle != -1)
+    {
+        m_handle = -1;
+        m_originalWidth = 0;
+        m_originalHeight = 0;
+    }
+}
