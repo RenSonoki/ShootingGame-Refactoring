@@ -1,34 +1,29 @@
 #pragma once
-
-#include "IEntityPrototype.h"
 #include <string>
 #include <memory>
-#include "DxLib.h" // VECTORのため
+#include "DxLib.h"
 
-// 弾エンティティのプロトタイプ（設計図）
-class BulletPrototype : public IEntityPrototype
+// 前方宣言
+class Entity;
+class BulletEntity;
+class TransformComponent;
+
+class BulletPrototype
 {
 public:
-    BulletPrototype(const std::wstring& modelPath, float speed, float lifetimeInSeconds);
+    // ★ デフォルトコンストラクタに変更
+    BulletPrototype();
 
-    // Prototypeインターフェースの実装
-    // Cloneのシグネチャを、より実用的なものに変更
-    std::shared_ptr<Entity> Clone(const VECTOR& position, const VECTOR& direction) const;
-
-    // IEntityPrototypeの仮想関数をオーバーライドするために残すが、あまり使わない
-    std::shared_ptr<Entity> Clone() const override;
-    std::shared_ptr<Entity> CloneWithTransform(const VECTOR& position) const override;
-
-    std::wstring GetName() const override;
-    std::wstring GetCategory() const override;
-
-    // (ゲッター/セッターは変更なし、ただしlifetimeの型はfloatに)
+    // ★ セッターメソッドを追加
+    void SetModel(const std::wstring& modelPath);
     void SetSpeed(float speed);
-    void SetLifetime(float lifetimeInSeconds);
-    // ...
+    void SetLifetime(float lifetime);
+
+    // この設計図から新しい弾を複製する
+    std::shared_ptr<BulletEntity> Clone(const VECTOR& position, const VECTOR& direction) const;
 
 private:
     std::wstring m_modelPath;
     float m_speed;
-    float m_lifetimeInSeconds;
+    float m_lifetime;
 };

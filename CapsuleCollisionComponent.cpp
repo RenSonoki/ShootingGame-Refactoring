@@ -9,6 +9,11 @@ CapsuleCollisionComponent::CapsuleCollisionComponent(float radius, float height)
 {
 }
 
+ComponentID CapsuleCollisionComponent::GetID() const
+{
+    return ComponentID::Capsule;
+}
+
 void CapsuleCollisionComponent::Start()
 {
     m_transform = GetOwner()->GetComponent<TransformComponent>();
@@ -46,7 +51,6 @@ float CapsuleCollisionComponent::GetHeight() const
 void CapsuleCollisionComponent::SetBaseRadius(float radius) { m_baseRadius = radius; }
 void CapsuleCollisionComponent::SetBaseHeight(float height) { m_baseHeight = height; }
 
-// yC³“_z‰ñ“]‚ğ³‚µ‚­”½‰f‚·‚é
 std::pair<VECTOR, VECTOR> CapsuleCollisionComponent::GetWorldLineSegment() const
 {
     if (auto transform = m_transform.lock())

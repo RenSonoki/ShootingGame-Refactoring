@@ -1,43 +1,29 @@
 #include "BulletPrototype.h"
-#include "BulletEntity.h" // 正しいBulletEntityのヘッダ
+#include "BulletBuilder.h" // Builderを使って構築する
 
-BulletPrototype::BulletPrototype(const std::wstring& modelPath,float speed,float lifetimeInSeconds)
-    : m_modelPath(modelPath)
-    , m_speed(speed)
-    , m_lifetimeInSeconds(lifetimeInSeconds)
+// ★ デフォルトコンストラクタの実装
+BulletPrototype::BulletPrototype()
+    : m_modelPath(L"")
+    , m_speed(100.0f)
+    , m_lifetime(3.0f)
 {
 }
 
-// これがメインで使うクローンメソッド
-std::shared_ptr<Entity> BulletPrototype::Clone(const VECTOR& position, const VECTOR& direction) const
-{
-    return std::make_shared<BulletEntity>(position, direction, m_speed, m_lifetimeInSeconds, m_modelPath);
-}
-
-// --- 以下はIEntityPrototypeインターフェースを実装するためのおまけ ---
-
-std::shared_ptr<Entity> BulletPrototype::Clone() const
-{
-    // デフォルト位置、Z+方向で生成
-    return Clone({ 0,0,0 }, { 0,0,1 });
-}
-
-std::shared_ptr<Entity> BulletPrototype::CloneWithTransform(const VECTOR& position) const
-{
-    // 指定位置、Z+方向で生成
-    return Clone(position, { 0,0,1 });
-}
-
-
-std::wstring BulletPrototype::GetName() const
-{
-    return L"Standard Bullet";
-}
-
-std::wstring BulletPrototype::GetCategory() const
-{
-    return L"Projectile";
-}
-
+// ★ セッターの実装
+void BulletPrototype::SetModel(const std::wstring& modelPath) { m_modelPath = modelPath; }
 void BulletPrototype::SetSpeed(float speed) { m_speed = speed; }
-void BulletPrototype::SetLifetime(float lifetimeInSeconds) { m_lifetimeInSeconds = lifetimeInSeconds; }
+void BulletPrototype::SetLifetime(float lifetime) { m_lifetime = lifetime; }
+
+// CloneメソッドはBuilderを使う
+std::shared_ptr<BulletEntity> BulletPrototype::Clone(const VECTOR& position, const VECTOR& direction) const
+{
+    BulletBuilder builder;
+    auto bullet = builder.SetPosition(position)
+        .SetDirection(direction)
+        .SetModel(m_modelPath)
+        .SetSpeed(m_speed)
+        .SetLifetime(m_lifetime)
+        .Build();
+
+    return bullet;
+}

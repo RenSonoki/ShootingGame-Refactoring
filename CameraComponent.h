@@ -1,37 +1,27 @@
-#pragma once//修正済み
-
-#include "DrawComponent.h"
+#pragma once
+#include "ComponentBase.h"
 #include <DxLib.h>
 
-// カメラパラメータ保持用の構造体
-struct CameraParameters
-{
-    VECTOR position = VGet(0, 0, -10);
-    VECTOR target = VGet(0, 0, 0);
-    VECTOR up = VGet(0, 1, 0);
-};
-
-// カメラ設定コンポーネント（描画時にカメラ反映）
-class CameraComponent : public DrawComponent
+class CameraComponent : public ComponentBase
 {
 public:
-    CameraComponent() = default;
+    CameraComponent();
+    virtual ~CameraComponent() = default;
 
-    void SetPosition(const VECTOR& pos);
-    void SetTarget(const VECTOR& target);
-    void SetUpVector(const VECTOR& up);
+    void Update(float deltaTime) override {}
+    ComponentID GetID() const override;
 
-    VECTOR GetPosition() const;
-    VECTOR GetTarget() const;
-    VECTOR GetUpVector() const;
+    // このカメラをDxLibのアクティブなカメラとして設定する
+    void Activate() const;
 
-    // 描画系処理（EntitySystemから呼ばれる）
-	// 自動的にApplyToDxLibCamera()が呼ばれるようにする
-    void Draw() override;
-
-    // DxLibにカメラ反映
-    void ApplyToDxLibCamera() const;
+    void SetFov(float fovAngleRad);
+    void SetNearFarClip(float nearClip, float farClip);
 
 private:
-    CameraParameters m_params;
+    void ApplyProjectionSettings() const;
+    void ApplyViewSettings() const;
+
+    float m_fov;
+    float m_nearClip;
+    float m_farClip;
 };

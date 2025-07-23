@@ -1,27 +1,45 @@
 #pragma once
-
-#include "LogicComponent.h"
+#include "ComponentBase.h" // ★ 基底クラスを変更
 #include <memory>
+#include <functional>
 
+// 前方宣言
 class TransformComponent;
 class EntitySystem;
 class BulletPrototype;
+class Entity;
 
-// 弾の発射とクールダウンを制御するコンポーネント
-class BulletShooterComponent : public LogicComponent
+/**
+ * @class BulletShooterComponent
+ * @brief 弾の発射とクールダウンを制御するコンポーネント
+ */
+class BulletShooterComponent : public ComponentBase
 {
 public:
-    // 自身のTransformは渡さず、外部のシステムや設計図を受け取る
-    BulletShooterComponent(EntitySystem* entitySystem, std::shared_ptr<BulletPrototype> prototype);
+    // ★ 修正点: デフォルトコンストラクタに変更
+    BulletShooterComponent();
+    virtual ~BulletShooterComponent() = default;
+
+    ComponentID GetID() const override;
 
     void Start() override;
     void Update(float deltaTime) override;
+
+    /**
+     * @brief このシューターが使用する設計図と、弾を追加するシステムを設定します
+     * @param prototype 弾の設計図
+     * @param entitySystem 弾の追加先となるシステム
+     */
+    void Setup(std::shared_ptr<BulletPrototype> prototype, EntitySystem* entitySystem);
 
     // 発射リクエスト
     void RequestShoot();
 
     // クールダウン時間を秒数で設定
     void SetCooldown(float seconds);
+
+    // 現在発射可能か（クールダウンが終わっているか）
+    bool CanShoot() const;
 
 private:
     void Shoot(); // 内部的な発射処理
@@ -30,8 +48,7 @@ private:
     EntitySystem* m_entitySystem;
     std::shared_ptr<BulletPrototype> m_prototype;
 
-    // タイマーとクールダウンを秒数(float)で管理
-    float m_cooldownTime = 0.3f; // デフォルトは0.3秒
-    float m_timer = 0.0f;
-    bool m_isShootRequested = false;
+    float m_cooldownTime;
+    float m_timer;
+    bool m_isShootRequested;
 };

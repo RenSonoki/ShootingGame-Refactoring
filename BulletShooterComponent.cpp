@@ -2,18 +2,34 @@
 #include "Entity.h"
 #include "TransformComponent.h"
 #include "BulletPrototype.h"
+#include "BulletEntity.h"
 #include "EntitySystem.h"
 #include <cassert>
 
-BulletShooterComponent::BulletShooterComponent(
-    EntitySystem* entitySystem,
-    std::shared_ptr<BulletPrototype> prototype)
-    : m_entitySystem(entitySystem)
-    , m_prototype(prototype)
+// ★ 修正点: デフォルトコンストラクタの実装
+BulletShooterComponent::BulletShooterComponent()
+    : m_entitySystem(nullptr)
+    , m_prototype(nullptr)
     , m_transform(nullptr)
+    , m_cooldownTime(0.3f)
+    , m_timer(0.0f)
+    , m_isShootRequested(false)
 {
-    assert(m_entitySystem != nullptr && "BulletShooterComponent requires an EntitySystem.");
+}
+
+// ★ 修正点: 依存性を注入するためのSetupメソッド
+void BulletShooterComponent::Setup(std::shared_ptr<BulletPrototype> prototype, EntitySystem* entitySystem)
+{
+    m_prototype = prototype;
+    m_entitySystem = entitySystem;
     assert(m_prototype != nullptr && "BulletShooterComponent requires a BulletPrototype.");
+    assert(m_entitySystem != nullptr && "BulletShooterComponent requires an EntitySystem.");
+}
+
+
+ComponentID BulletShooterComponent::GetID() const
+{
+    return ComponentID::Shooting;
 }
 
 void BulletShooterComponent::Start()
@@ -24,19 +40,16 @@ void BulletShooterComponent::Start()
 
 void BulletShooterComponent::Update(float deltaTime)
 {
-    // クールダウンタイマーを進める
     if (m_timer > 0.0f)
     {
         m_timer -= deltaTime;
     }
 
-    // 発射が要求されていて、クールダウンが終わっていれば発射
-    if (m_isShootRequested && m_timer <= 0.0f)
+    if (m_isShootRequested && CanShoot())
     {
         Shoot();
     }
 
-    // 要求フラグは毎フレームリセット
     m_isShootRequested = false;
 }
 
@@ -50,18 +63,27 @@ void BulletShooterComponent::SetCooldown(float seconds)
     m_cooldownTime = seconds;
 }
 
+bool BulletShooterComponent::CanShoot() const
+{
+    return m_timer <= 0.0f;
+}
+
+// private
 void BulletShooterComponent::Shoot()
 {
-    if (!m_transform) return;
+    // 依存関係が設定されていない場合は何もしない
+    if (!m_transform || !m_prototype || !m_entitySystem) return;
 
     VECTOR pos = m_transform->GetPosition();
     VECTOR dir = m_transform->GetForward();
 
-    // BulletFactoryではなく、プロトタイプのCloneメソッドを直接使う
+    // プロトタイプから弾を複製
     auto bullet = m_prototype->Clone(pos, dir);
     if (bullet)
     {
+        // エンティティシステムに新しい弾を追加
         m_entitySystem->AddEntity(bullet);
-        m_timer = m_cooldownTime; // クールダウンタイマーをリセット
+        // クールダウンタイマーをリセット
+        m_timer = m_cooldownTime;
     }
 }

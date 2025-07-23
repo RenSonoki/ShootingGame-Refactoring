@@ -1,8 +1,12 @@
 #include "ColliderManager.h"
+#include "Entity.h"
+#include "TransformComponent.h"
 #include <algorithm>
-#include <iterator>
+#include <vector>
+#include <set>
+#include <unordered_set>
 
-ColliderManager& ColliderManager::Instance()
+ColliderManager& ColliderManager::GetInstance()
 {
     static ColliderManager instance;
     return instance;
@@ -10,18 +14,15 @@ ColliderManager& ColliderManager::Instance()
 
 void ColliderManager::Init(float worldWidth, float worldDepth, float cellSize)
 {
-    m_worldWidth = worldWidth;
-    m_worldDepth = worldDepth;
-    m_cellSize = cellSize;
-    m_gridCols = static_cast<int>(std::ceil(worldWidth / cellSize));
+    m_cellSize = (cellSize > 1e-6f) ? cellSize : 1.0f;
+    m_gridCols = static_cast<int>(std::ceil(worldWidth / m_cellSize));
+    m_gridRows = static_cast<int>(std::ceil(worldDepth / m_cellSize));
     Clear();
 }
 
 void ColliderManager::Register(const std::shared_ptr<ICollisionComponent>& collider)
 {
-    if (!collider) return;
-    auto it = std::find(m_colliders.begin(), m_colliders.end(), collider);
-    if (it == m_colliders.end())
+    if (collider)
     {
         m_colliders.push_back(collider);
     }
@@ -40,47 +41,60 @@ void ColliderManager::RegisterCollisionCheck(CollisionPair pair, CollisionFunc f
     m_collisionCheckers[pair] = func;
 }
 
-
-// ゲームの世界を碁盤の目のような「グリッド」で分割し、各コライダーをその位置に応じたセルに登録。
-// 当たり判定を行う際は、「自分と同じセルにいるコライダー」だけをチェック対象。
-// これによりチェック回数を劇的に削減
 void ColliderManager::CheckAllCollisions()
 {
     ApplyPendingRemovals();
     UpdateGrid();
 
-    // グリッドの各セルをチェック
+    std::set<std::pair<const ICollisionComponent*, const ICollisionComponent*>> checkedPairs;
+
     for (const auto& gridCellPair : m_grid)
     {
-        const auto& cell = gridCellPair.second;
-        if (cell.size() < 2) continue;
-
-        // セル内のコライダー同士で総当たりチェック
-        for (size_t i = 0; i < cell.size(); ++i)
+        const auto& currentCell = gridCellPair.second;
+        // (ここでは簡易化のため同一セル内のみをチェック)
+        for (const auto& a : currentCell)
         {
-            auto& a = cell[i];
             if (!a || !a->IsActive()) continue;
-
-            for (size_t j = i + 1; j < cell.size(); ++j)
+            for (const auto& b : currentCell)
             {
-                auto& b = cell[j];
-                if (!b || !b->IsActive()) continue;
+                if (!b || !b->IsActive() || a == b) continue;
 
-                // ルックアップテーブルから判定関数を検索
-                CollisionPair pair(a->GetShapeType(), b->GetShapeType());
-                auto it = m_collisionCheckers.find(pair);
-                if (it != m_collisionCheckers.end())
+                auto pairToTest = (a.get() < b.get()) ? std::make_pair(a.get(), b.get()) : std::make_pair(b.get(), a.get());
+                if (checkedPairs.count(pairToTest)) continue;
+
+                CollisionPair typePair(a->GetShapeType(), b->GetShapeType());
+                auto checkerIt = m_collisionCheckers.find(typePair);
+                if (checkerIt != m_collisionCheckers.end())
                 {
-                    // 発見した関数で衝突判定を実行
-                    if (it->second(*a, *b))
+                    CollisionInfo info;
+                    if (checkerIt->second(*a, *b, info))
                     {
+                        ResolveCollision(*a, *b, info);
                         a->TriggerCollision(b->GetOwner());
                         b->TriggerCollision(a->GetOwner());
                     }
                 }
+                checkedPairs.insert(pairToTest);
             }
         }
     }
+}
+
+// ★ RigidbodyComponentへの依存を削除した、シンプルな衝突解決
+void ColliderManager::ResolveCollision(ICollisionComponent& a, ICollisionComponent& b, const CollisionInfo& info)
+{
+    auto ownerA = a.GetOwner();
+    auto ownerB = b.GetOwner();
+    if (!ownerA || !ownerB) return;
+
+    auto transformA = ownerA->GetComponent<TransformComponent>();
+    auto transformB = ownerB->GetComponent<TransformComponent>();
+    if (!transformA || !transformB) return;
+
+    // 両者を半分ずつ押し出す
+    VECTOR push = VScale(info.normal, info.depth * 0.5f);
+    transformA->SetPosition(VAdd(transformA->GetPosition(), push));
+    transformB->SetPosition(VSub(transformB->GetPosition(), push));
 }
 
 void ColliderManager::Clear()
@@ -93,12 +107,12 @@ void ColliderManager::Clear()
 void ColliderManager::ApplyPendingRemovals()
 {
     if (m_pendingRemoval.empty()) return;
-    m_colliders.erase(
-        std::remove_if(m_colliders.begin(), m_colliders.end(),
-            [this](const auto& c) {
-                return std::find(m_pendingRemoval.begin(), m_pendingRemoval.end(), c) != m_pendingRemoval.end();
-            }),
-        m_colliders.end());
+
+    std::unordered_set<std::shared_ptr<ICollisionComponent>> removalSet(m_pendingRemoval.begin(), m_pendingRemoval.end());
+    std::erase_if(m_colliders, [&removalSet](const auto& c) {
+        return removalSet.count(c) > 0;
+        });
+
     m_pendingRemoval.clear();
 }
 
@@ -117,7 +131,12 @@ void ColliderManager::UpdateGrid()
 
 int ColliderManager::GetGridIndex(const VECTOR& position) const
 {
+    if (m_cellSize < 1e-6f) return 0;
     int x = static_cast<int>(position.x / m_cellSize);
     int z = static_cast<int>(position.z / m_cellSize);
+
+    x = std::clamp(x, 0, m_gridCols - 1);
+    z = std::clamp(z, 0, m_gridRows - 1);
+
     return x + z * m_gridCols;
 }

@@ -1,32 +1,39 @@
 #pragma once
-
 #include <vector>
 #include <memory>
-#include <unordered_set> // vectorの代わりにunordered_setを使用
-#include "Entity.h"
+#include <string>
 
-// シーンに存在する全てのエンティティのライフサイクル（生成、更新、描画、破棄）を管理するクラス
+class Entity; // 前方宣言
+
+// シーンに存在する全ての「ゲームワールドの」エンティティのライフサイクルを管理するクラス
 class EntitySystem
 {
 public:
     EntitySystem() = default;
     ~EntitySystem() = default;
 
+    EntitySystem(const EntitySystem&) = delete;
+    EntitySystem& operator=(const EntitySystem&) = delete;
+
+    // ★ 修正点: 構築済みのエンティティを受け取るようにシグネチャを変更
     void AddEntity(std::shared_ptr<Entity> entity);
     void RemoveEntity(std::shared_ptr<Entity> entity);
+    const std::vector<std::shared_ptr<Entity>>& GetEntities() const;
 
-    void Start();
-    void Update(float deltaTime);
-    void Draw();
+    size_t GetEntityCount() const;
+
+    void StartAll();
+    void UpdateAll(float deltaTime);
+    void DrawAll() const; // ★ const を追加
     void Clear();
 
-    const std::vector<std::shared_ptr<Entity>>& GetEntities() const;
-    
 private:
+    void ApplyPendingActions();
+
     std::vector<std::shared_ptr<Entity>> m_entities;
+    std::vector<std::shared_ptr<Entity>> m_pendingAdd;
+    // ★ 改善案: 削除対象はポインタで十分
+    std::vector<Entity*> m_pendingRemoval;
 
-    // 削除待ちリストをunordered_setに変更
-    std::unordered_set<std::shared_ptr<Entity>> m_pendingRemoval;
-
-    bool m_started = false;
+    bool m_isUpdating = false;
 };

@@ -2,22 +2,24 @@
 #include "Entity.h"
 #include "CameraComponent.h"
 #include <algorithm>
-#include <DxLib.h>
 
 void CameraSystem::Register(const std::shared_ptr<Entity>& cameraEntity)
 {
     if (!cameraEntity) return;
 
-    // EntityからCameraComponentを取得
     auto camera = cameraEntity->GetComponent<CameraComponent>();
     if (camera)
     {
-        m_cameras.push_back(camera);
-
-        // 最初に追加されたカメラをアクティブにする
-        if (m_activeCamera.expired())
+        // 重複がないか確認
+        auto it = std::find(m_cameras.begin(), m_cameras.end(), camera);
+        if (it == m_cameras.end())
         {
-            m_activeCamera = camera;
+            m_cameras.push_back(camera);
+            // 最初に追加されたカメラをアクティブにする
+            if (m_activeCamera.expired())
+            {
+                m_activeCamera = camera;
+            }
         }
     }
 }
@@ -26,24 +28,25 @@ void CameraSystem::Unregister(const std::shared_ptr<Entity>& cameraEntity)
 {
     if (!cameraEntity) return;
     auto camera = cameraEntity->GetComponent<CameraComponent>();
-    if (!camera) return;
-
-    // std::erase_if (C++20) を使うとより簡潔
-    std::erase(m_cameras, camera);
-
-    if (m_activeCamera.lock() == camera)
+    if (camera)
     {
-        m_activeCamera.reset();
+        // 【修正点】即時削除ではなく、削除待ちリストに追加する
+        m_pendingRemoval.push_back(camera);
     }
 }
 
 void CameraSystem::SetActiveCamera(const std::shared_ptr<CameraComponent>& camera)
 {
-    // 指定されたカメラが登録済みか確認
-    auto it = std::find(m_cameras.begin(), m_cameras.end(), camera);
-    if (it != m_cameras.end())
-    {
-        m_activeCamera = camera;
+    // 指定されたカメラが登録済みか確認（nullptrも考慮）
+    if (camera) {
+        auto it = std::find(m_cameras.begin(), m_cameras.end(), camera);
+        if (it != m_cameras.end())
+        {
+            m_activeCamera = camera;
+        }
+    }
+    else {
+        m_activeCamera.reset();
     }
 }
 
@@ -54,9 +57,36 @@ std::shared_ptr<CameraComponent> CameraSystem::GetActiveCamera() const
 
 void CameraSystem::ApplyActiveCamera()
 {
+    // 1. まず、安全に削除処理を行う
+    ApplyPendingRemovals();
+
+    // 2. アクティブなカメラを取得して設定を適用
     if (auto active = m_activeCamera.lock())
     {
-        // カメラコンポーネント自身に、DxLibへの適用を命令するだけ
-        active->ApplyToDxLibCamera();
+        // 【修正点】メソッド名をActivate()に統一
+        active->Activate();
     }
+}
+
+void CameraSystem::Clear()
+{
+    m_cameras.clear();
+    m_pendingRemoval.clear();
+    m_activeCamera.reset();
+}
+
+// private:
+void CameraSystem::ApplyPendingRemovals()
+{
+    if (m_pendingRemoval.empty()) return;
+
+    // 削除待ちリストにあるカメラを、メインのリストから除去する
+    m_cameras.erase(
+        std::remove_if(m_cameras.begin(), m_cameras.end(),
+            [this](const auto& cam) {
+                return std::find(m_pendingRemoval.begin(), m_pendingRemoval.end(), cam) != m_pendingRemoval.end();
+            }),
+        m_cameras.end());
+
+    m_pendingRemoval.clear();
 }

@@ -1,41 +1,48 @@
-#include "CameraComponent.h"
+﻿#include "CameraComponent.h"
+#include "Entity.h"
+#include "TransformComponent.h"
+#include <cassert>
 
-void CameraComponent::SetPosition(const VECTOR& pos)
+CameraComponent::CameraComponent()
+    : m_fov(DX_PI_F / 4.0f), m_nearClip(0.1f), m_farClip(5000.0f)
 {
-    m_params.position = pos;
 }
 
-void CameraComponent::SetTarget(const VECTOR& target)
+ComponentID CameraComponent::GetID() const { return ComponentID::Camera; }
+
+void CameraComponent::SetFov(float fovAngleRad) { m_fov = fovAngleRad; }
+void CameraComponent::SetNearFarClip(float nearClip, float farClip)
 {
-    m_params.target = target;
+    m_nearClip = nearClip;
+    m_farClip = farClip;
 }
 
-void CameraComponent::SetUpVector(const VECTOR& up)
+void CameraComponent::Activate() const
 {
-    m_params.up = up;
+    ApplyProjectionSettings();
+    ApplyViewSettings();
 }
 
-VECTOR CameraComponent::GetPosition() const
+void CameraComponent::ApplyProjectionSettings() const
 {
-    return m_params.position;
+    // 射影行列（パース）に関する設定
+    SetupCamera_Perspective(m_fov);
+    SetCameraNearFar(m_nearClip, m_farClip);
 }
 
-VECTOR CameraComponent::GetTarget() const
+void CameraComponent::ApplyViewSettings() const
 {
-    return m_params.target;
-}
+    // ビュー行列（カメラの位置・向き）に関する設定
+    auto owner = GetOwner();
+    if (!owner) return;
+    auto transform = owner->GetComponent<TransformComponent>();
+    if (!transform) return;
 
-VECTOR CameraComponent::GetUpVector() const
-{
-    return m_params.up;
-}
+    VECTOR position = transform->GetPosition();
+    VECTOR forward = transform->GetForward();
+    VECTOR target = VAdd(position, forward);
+    VECTOR up = transform->GetUp();
 
-void CameraComponent::ApplyToDxLibCamera() const
-{
-    SetCameraPositionAndTargetAndUpVec(m_params.position, m_params.target, m_params.up);
-}
-
-void CameraComponent::Draw()
-{
-    ApplyToDxLibCamera();
+    // ✅ 関数リストにある、最も適切な関数を使用
+    SetCameraPositionAndTargetAndUpVec(position, target, up);
 }

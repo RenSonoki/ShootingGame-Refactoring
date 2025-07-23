@@ -19,10 +19,8 @@ void Entity::SetTag(const std::wstring& tag) { m_tag = tag; }
 void Entity::Start()
 {
     if (m_started || !m_active) return;
-
     m_started = true;
 
-    // vectorの全コンポーネントのStartを呼ぶ
     for (const auto& comp : m_components)
     {
         if (comp->IsActive())
@@ -36,7 +34,6 @@ void Entity::Update(float deltaTime)
 {
     if (!m_active) return;
 
-    // vectorの全コンポーネントのUpdateを呼ぶ
     for (const auto& comp : m_components)
     {
         if (comp->IsActive())
@@ -50,7 +47,6 @@ void Entity::Draw() const
 {
     if (!m_active) return;
 
-    // vectorの全コンポーネントのDrawを呼ぶ
     for (const auto& comp : m_components)
     {
         if (comp->IsActive())

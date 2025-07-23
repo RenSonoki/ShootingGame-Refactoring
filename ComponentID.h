@@ -1,22 +1,44 @@
 #pragma once
+#include <functional> // ★ std::hash のためにインクルード
 
 // プロジェクトに存在するコンポーネントの種類をすべて列挙します。
-// NOTE: 新しいコンポーネントを追加したら、ここにも追加してください。
 enum class ComponentID
 {
-    // 基本コンポーネント
+    // ... (内容は変更なし)
     Transform,
-
-    // 描画コンポーネント
     SpriteRenderer,
     ModelRenderer,
-
-    // ロジック・物理コンポーネント
     PlayerController,
     AIController,
     Rigidbody,
     Collider,
-
-    // その他
-    Animator
+    Camera,
+    CameraController,
+    Animator,
+    Move,
+    Life,
+    Homing,
+    Health,
+    Shooting,
+    Sphere,
+	Capsule,
+    ThirdPersonCamera
 };
+
+
+// --- std::hash for ComponentID ---
+// std::unordered_mapがComponentIDをキーとして使えるように、ハッシュ関数を定義します
+namespace std
+{
+    template <>
+    struct hash<ComponentID>
+    {
+        size_t operator()(const ComponentID& id) const
+        {
+            // enum class の実体である整数値を、そのままハッシュ値として利用します
+            return hash<std::underlying_type_t<ComponentID>>()(
+                static_cast<std::underlying_type_t<ComponentID>>(id)
+                );
+        }
+    };
+}

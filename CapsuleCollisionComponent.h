@@ -12,6 +12,8 @@ public:
     explicit CapsuleCollisionComponent(float radius, float height);
     virtual ~CapsuleCollisionComponent() = default;
 
+    ComponentID GetID() const override;
+
     // --- ライフサイクルメソッド ---
     void Start() override;
     void Update(float deltaTime) override {}
